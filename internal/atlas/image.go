@@ -203,9 +203,6 @@ func (b *backend) writePixels(pixels *graphics.ManagedBytes, region image.Rectan
 }
 
 var (
-	// backendsM is a mutex for critical sections of the backend and packing.Node objects.
-	backendsM sync.Mutex
-
 	// inFrame indicates whether the current state is in between BeginFrame and EndFrame or not.
 	// If inFrame is false, function calls on an image should be deferred until the next BeginFrame.
 	inFrame bool
