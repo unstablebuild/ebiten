@@ -362,6 +362,10 @@ func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
 	return u.window.SetWindowBlur(radius)
 }
 
+func (u *UserInterface) setNativeEmbeddedButtons() error {
+	return u.window.SetEmbeddedButtonsDecoration()
+}
+
 func (u *UserInterface) adjustViewSizeAfterFullscreen() error {
 	if u.GraphicsLibrary() == GraphicsLibraryOpenGL {
 		return nil

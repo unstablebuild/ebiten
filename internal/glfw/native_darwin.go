@@ -47,3 +47,12 @@ func (w *Window) SetWindowBlur(radius int) error {
 	C.glfwSetCocoaWindowBlur(w.data, C.int(radius))
 	return fetchErrorIgnoringPlatformError()
 }
+
+// SetEmbeddedButtonsDecoration hides the title
+// bar but ensures that the close, minimize and
+// maximize buttons are embedded within the resulting
+// interface.
+func (w *Window) SetEmbeddedButtonsDecoration() error {
+	C.glfwSetCocoaEmbeddedButtons(w.data)
+	return fetchErrorIgnoringPlatformError()
+}

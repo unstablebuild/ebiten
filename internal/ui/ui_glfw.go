@@ -73,7 +73,7 @@ type userInterfaceImpl struct {
 	initFullscreen             bool
 	initBackgroundBlur         int
 	initCursorMode             CursorMode
-	initWindowDecorated        bool
+	initWindowDecorated        Decorations
 	initWindowPositionXInDIP   int
 	initWindowPositionYInDIP   int
 	initWindowWidthInDIP       int
@@ -130,7 +130,7 @@ func (u *UserInterface) init() error {
 		maxWindowWidthInDIP:      glfw.DontCare,
 		maxWindowHeightInDIP:     glfw.DontCare,
 		initCursorMode:           CursorModeVisible,
-		initWindowDecorated:      true,
+		initWindowDecorated:      DecorationsTitleBar,
 		initWindowPositionXInDIP: invalidPos,
 		initWindowPositionYInDIP: invalidPos,
 		initWindowWidthInDIP:     640,
@@ -427,16 +427,16 @@ func (u *UserInterface) setCursorShape(shape CursorShape) CursorShape {
 	return old
 }
 
-func (u *UserInterface) isInitWindowDecorated() bool {
+func (u *UserInterface) isInitWindowDecorated() Decorations {
 	u.m.RLock()
 	v := u.initWindowDecorated
 	u.m.RUnlock()
 	return v
 }
 
-func (u *UserInterface) setInitWindowDecorated(decorated bool) {
+func (u *UserInterface) setInitWindowDecorated(deco Decorations) {
 	u.m.Lock()
-	u.initWindowDecorated = decorated
+	u.initWindowDecorated = deco
 	u.m.Unlock()
 }
 
@@ -1067,7 +1067,7 @@ func (u *UserInterface) initOnMainThread(options *RunOptions) error {
 	// On macOS, window decoration should be initialized once after buffers are swapped (#2600).
 	if runtime.GOOS != "darwin" {
 		decorated := glfw.False
-		if u.isInitWindowDecorated() {
+		if u.isInitWindowDecorated() != DecorationsNone {
 			decorated = glfw.True
 		}
 		if err := glfw.WindowHint(glfw.Decorated, decorated); err != nil {
@@ -1295,18 +1295,23 @@ func (u *UserInterface) update() (float64, float64, error) {
 		var err error
 		u.darwinInitOnce.Do(func() {
 			// On macOS, window decoration should be initialized once after buffers are swapped (#2600).
-			decorated := glfw.False
-			if u.isInitWindowDecorated() {
-				decorated = glfw.True
+			var err error
+			switch u.isInitWindowDecorated() {
+			case DecorationsNone:
+				err = u.window.SetAttrib(glfw.Decorated, glfw.False)
+			case DecorationsTitleBar:
+				err = u.window.SetAttrib(glfw.Decorated, glfw.True)
+			case DecorationsButtonsOnly:
+				err = u.setNativeEmbeddedButtons()
 			}
-			if err = u.window.SetAttrib(glfw.Decorated, decorated); err != nil {
+			if err != nil {
 				return
 			}
 			radius := u.initBackgroundBlur
 			if u.initBackgroundBlur != 0 {
 				u.setInitBackgroundBlur(0)
 			}
-			err := u.setNativeBackgroundBlur(radius)
+			err = u.setNativeBackgroundBlur(radius)
 			if err != nil {
 				u.setError(err)
 				return
@@ -2023,24 +2028,25 @@ func (u *UserInterface) restoreWindow() error {
 }
 
 // setWindowDecorated must be called from the main thread.
-func (u *UserInterface) setWindowDecorated(decorated bool) error {
+func (u *UserInterface) setWindowDecorated(decorated Decorations) error {
 	if microsoftgdk.IsXbox() {
 		return nil
 	}
-
-	v := glfw.False
-	if decorated {
-		v = glfw.True
-	}
-	if err := u.window.SetAttrib(glfw.Decorated, v); err != nil {
-		return err
-	}
-
-	// The title can be lost when the decoration is gone. Recover this.
-	if decorated {
+	var err error
+	switch decorated {
+	case DecorationsNone:
+		err = u.window.SetAttrib(glfw.Decorated, glfw.False)
+	case DecorationsTitleBar:
+		err = u.window.SetAttrib(glfw.Decorated, glfw.True)
+		// The title can be lost when the decoration is gone. Recover this.
 		if err := u.window.SetTitle(u.title); err != nil {
 			return err
 		}
+	case DecorationsButtonsOnly:
+		err = u.setNativeEmbeddedButtons()
+	}
+	if err != nil {
+		return err
 	}
 
 	return nil

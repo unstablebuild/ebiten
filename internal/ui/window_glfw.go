@@ -32,7 +32,7 @@ func (w *glfwWindow) IsDecorated() bool {
 		return false
 	}
 	if !w.ui.isRunning() {
-		return w.ui.isInitWindowDecorated()
+		return w.ui.isInitWindowDecorated() != DecorationsNone
 	}
 	var v bool
 	w.ui.mainThread.Call(func() {
@@ -49,12 +49,12 @@ func (w *glfwWindow) IsDecorated() bool {
 	return v
 }
 
-func (w *glfwWindow) SetDecorated(decorated bool) {
+func (w *glfwWindow) SetDecorated(deco Decorations) {
 	if w.ui.isTerminated() {
 		return
 	}
 	if !w.ui.isRunning() {
-		w.ui.setInitWindowDecorated(decorated)
+		w.ui.setInitWindowDecorated(deco)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (w *glfwWindow) SetDecorated(decorated bool) {
 		if w.ui.isTerminated() {
 			return
 		}
-		if err := w.ui.setWindowDecorated(decorated); err != nil {
+		if err := w.ui.setWindowDecorated(deco); err != nil {
 			w.ui.setError(err)
 			return
 		}

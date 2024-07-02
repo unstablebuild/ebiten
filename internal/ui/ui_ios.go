@@ -92,6 +92,10 @@ func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
 	return nil
 }
 
+func (u *UserInterface) setNativeEmbeddedButtons() error {
+	return nil
+}
+
 func deviceScaleFactorImpl() float64 {
 	// TODO: Can this be called from non-main threads?
 	return float64(C.devicePixelRatio())

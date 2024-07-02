@@ -57,9 +57,45 @@ func IsWindowDecorated() bool {
 // SetWindowDecorated does nothing if the platform is not a desktop.
 //
 // SetWindowDecorated is concurrent-safe.
+//
+// Deprecated: use SetWindowDecorations instead.
 func SetWindowDecorated(decorated bool) {
-	ui.Get().Window().SetDecorated(decorated)
+	decorations := DecorationsNone
+	if decorated {
+		decorations = DecorationsTitleBar
+	}
+	ui.Get().Window().SetDecorated(ui.Decorations(decorations))
 }
+
+// SetWindowDecorations sets the state if the window is decorated.
+//
+// The window is decorated by default.
+//
+// SetWindowDecorations works only on desktops.
+// SetWindowDecorations does nothing if the platform is not a desktop.
+//
+// SetWindowDecorations is concurrent-safe.
+func SetWindowDecorations(deco Decorations) {
+	ui.Get().Window().SetDecorated(ui.Decorations(deco))
+}
+
+// Decorations defines the type of window decorations to set
+// when calling SetWindowDecorated.
+type Decorations ui.Decorations
+
+const (
+	// DecorationsNone indicates that all decorations available for the given
+	// platform will be hidden.
+	DecorationsNone Decorations = Decorations(ui.DecorationsNone)
+	// DecorationsButtonsOnly indicates that all decorations available for
+	// the given platform will be visible.
+	DecorationsTitleBar Decorations = Decorations(ui.DecorationsTitleBar)
+	// DecorationsButtonsOnly indicates that bar and title will be hidden
+	// but close, minimize and maximize buttons will be visible.
+	//
+	// This is only available for MacOS.
+	DecorationsButtonsOnly Decorations = Decorations(ui.DecorationsButtonsOnly)
+)
 
 // WindowResizingMode returns the current mode in which a user resizes the window.
 //

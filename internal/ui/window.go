@@ -18,9 +18,17 @@ import (
 	"image"
 )
 
+type Decorations uint8
+
+const (
+	DecorationsNone Decorations = iota
+	DecorationsButtonsOnly
+	DecorationsTitleBar
+)
+
 type Window interface {
 	IsDecorated() bool
-	SetDecorated(decorated bool)
+	SetDecorated(decorated Decorations)
 	ResizingMode() WindowResizingMode
 	SetResizingMode(mode WindowResizingMode)
 	SetMonitor(*Monitor)
@@ -51,7 +59,7 @@ func (*nullWindow) IsDecorated() bool {
 	return false
 }
 
-func (*nullWindow) SetDecorated(decorated bool) {
+func (*nullWindow) SetDecorated(deco Decorations) {
 }
 
 func (*nullWindow) ResizingMode() WindowResizingMode {

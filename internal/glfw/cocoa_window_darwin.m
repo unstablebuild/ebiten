@@ -1863,4 +1863,30 @@ GLFWAPI void glfwSetCocoaWindowBlur(GLFWwindow *handle, int radius) {
 	}
 	NSInteger window_id = [window->ns.object windowNumber];
 	CGSSetWindowBackgroundBlurRadius(CGSDefaultConnectionForThread(), window_id, radius);
+	[window->ns.object setHasShadow:false];
+}
+
+GLFWAPI void glfwSetCocoaEmbeddedButtons(GLFWwindow *handle) {
+	_GLFWwindow* window = (_GLFWwindow*) handle;
+	_GLFW_REQUIRE_INIT();
+
+	const NSWindowStyleMask curr_mask = [window->ns.object styleMask];
+	NSArray *buttons = @[
+		[window->ns.object standardWindowButton:NSWindowCloseButton],
+		[window->ns.object standardWindowButton:NSWindowMiniaturizeButton],
+		[window->ns.object standardWindowButton:NSWindowZoomButton]
+	];
+
+		for (NSButton *button in buttons) {
+		[button setHidden:false];
+	}
+
+	[window->ns.object setTitlebarAppearsTransparent:true];
+	[window->ns.object setTitleVisibility:NSWindowTitleHidden];
+
+	NSWindowStyleMask styleMask = curr_mask | NSWindowStyleMaskFullSizeContentView |
+		NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable |
+		NSWindowStyleMaskTitled | NSWindowStyleMaskClosable;
+
+	[window->ns.object setStyleMask:styleMask];
 }

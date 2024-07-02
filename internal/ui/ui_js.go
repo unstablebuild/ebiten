@@ -819,6 +819,10 @@ func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
 	return nil
 }
 
+func (u *UserInterface) setNativeEmbeddedButtons() error {
+	return nil
+}
+
 func IsScreenTransparentAvailable() bool {
 	return true
 }
