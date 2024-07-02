@@ -172,6 +172,17 @@ GLFWAPI CGDirectDisplayID glfwGetCocoaMonitor(GLFWmonitor* monitor);
  *  @ingroup native
  */
 GLFWAPI id glfwGetCocoaWindow(GLFWwindow* window);
+
+/*! @brief Sets the window background blur of the specified window.
+ *
+ *  @errors Possible errors include @ref GLFW_NOT_INITIALIZED.
+ *
+ *  @thread_safety This function may be called from any thread.  Access is not
+ *  synchronized.
+ *
+ *  @ingroup native
+ */
+GLFWAPI void glfwSetCocoaWindowBlur(GLFWwindow *window, int radius);
 #endif
 
 #if defined(GLFW_EXPOSE_NATIVE_NSGL)
@@ -472,4 +483,3 @@ GLFWAPI OSMesaContext glfwGetOSMesaContext(GLFWwindow* window);
 #endif
 
 #endif /* _glfw3_native_h_ */
-

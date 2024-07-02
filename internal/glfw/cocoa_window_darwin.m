@@ -1852,3 +1852,15 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
     return window->ns.object;
 }
 
+extern OSStatus CGSSetWindowBackgroundBlurRadius(void* connection, NSInteger windowNumber, int radius);
+extern void* CGSDefaultConnectionForThread(void);
+
+GLFWAPI void glfwSetCocoaWindowBlur(GLFWwindow *handle, int radius) {
+	_GLFWwindow* window = (_GLFWwindow*) handle;
+    _GLFW_REQUIRE_INIT();
+	if (radius == 0) {
+		return;
+	}
+	NSInteger window_id = [window->ns.object windowNumber];
+	CGSSetWindowBackgroundBlurRadius(CGSDefaultConnectionForThread(), window_id, radius);
+}

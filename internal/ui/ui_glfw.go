@@ -71,6 +71,7 @@ type userInterfaceImpl struct {
 
 	initMonitor                *Monitor
 	initFullscreen             bool
+	initBackgroundBlur         int
 	initCursorMode             CursorMode
 	initWindowDecorated        bool
 	initWindowPositionXInDIP   int
@@ -386,6 +387,12 @@ func (u *UserInterface) isInitFullscreen() bool {
 	return v
 }
 
+func (u *UserInterface) setInitBackgroundBlur(radius int) {
+	u.m.Lock()
+	u.initBackgroundBlur = radius
+	u.m.Unlock()
+}
+
 func (u *UserInterface) setInitFullscreen(initFullscreen bool) {
 	u.m.Lock()
 	u.initFullscreen = initFullscreen
@@ -611,6 +618,23 @@ func (u *UserInterface) IsFullscreen() bool {
 		fullscreen = b
 	})
 	return fullscreen
+}
+
+func (u *UserInterface) SetWindowBackgroundBlur(radius int) {
+	if u.isTerminated() {
+		return
+	}
+	if !u.isRunning() {
+		u.setInitBackgroundBlur(radius)
+		return
+	}
+	u.mainThread.Call(func() {
+		err := u.setNativeBackgroundBlur(radius)
+		if err != nil {
+			u.setError(err)
+			return
+		}
+	})
 }
 
 func (u *UserInterface) SetFullscreen(fullscreen bool) {
@@ -1276,6 +1300,15 @@ func (u *UserInterface) update() (float64, float64, error) {
 				decorated = glfw.True
 			}
 			if err = u.window.SetAttrib(glfw.Decorated, decorated); err != nil {
+				return
+			}
+			radius := u.initBackgroundBlur
+			if u.initBackgroundBlur != 0 {
+				u.setInitBackgroundBlur(0)
+			}
+			err := u.setNativeBackgroundBlur(radius)
+			if err != nil {
+				u.setError(err)
 				return
 			}
 		})

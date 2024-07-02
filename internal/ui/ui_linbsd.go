@@ -183,6 +183,10 @@ func (u *UserInterface) setWindowResizingModeForOS(mode WindowResizingMode) erro
 	return nil
 }
 
+func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
+	return nil
+}
+
 func initializeWindowAfterCreation(w *glfw.Window) error {
 	// Show the window once before getting the position of the window.
 	// On Linux/Unix, the window position is not reliable before showing.

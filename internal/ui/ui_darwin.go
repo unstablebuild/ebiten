@@ -358,6 +358,10 @@ func (u *UserInterface) setNativeFullscreen(fullscreen bool) error {
 	return nil
 }
 
+func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
+	return u.window.SetWindowBlur(radius)
+}
+
 func (u *UserInterface) adjustViewSizeAfterFullscreen() error {
 	if u.GraphicsLibrary() == GraphicsLibraryOpenGL {
 		return nil

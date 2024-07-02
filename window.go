@@ -341,3 +341,10 @@ func SetWindowMousePassthrough(enabled bool) {
 func IsWindowMousePassthrough() bool {
 	return ui.Get().Window().IsMousePassthrough()
 }
+
+// SetWindowBackgroundBlur sets the window background blur.
+//
+// SetWindowBackgroundBlur is concurrent-safe.
+func SetWindowBackgroundBlur(radius int) {
+	ui.Get().SetWindowBackgroundBlur(radius)
+}

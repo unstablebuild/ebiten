@@ -39,3 +39,11 @@ func (w *Window) GetNSGLContext() (unsafe.Pointer, error) {
 	ret := C.workaround_glfwGetNSGLContext(w.data)
 	return ret, fetchErrorIgnoringPlatformError()
 }
+
+// SetWindowBlur sets the background window blur 
+// of this cocoa window and returns the window's new
+// blur radius.
+func (w *Window) SetWindowBlur(radius int) error {
+	C.glfwSetCocoaWindowBlur(w.data, C.int(radius))
+	return fetchErrorIgnoringPlatformError()
+}

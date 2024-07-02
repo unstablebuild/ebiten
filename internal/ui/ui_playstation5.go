@@ -171,6 +171,10 @@ func (u *UserInterface) Monitor() *Monitor {
 	return theMonitor
 }
 
+func (u *UserInterface) setNativeBackgroundBlur(radius int) error {
+	return nil
+}
+
 func IsScreenTransparentAvailable() bool {
 	return false
 }
