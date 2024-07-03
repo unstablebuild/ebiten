@@ -32,6 +32,16 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver/metal/mtl"
 )
 
+// Suppress the warnings about availability guard with -Wno-unguarded-availability-new.
+// It is because old Xcode (8 or older?) does not accept @available syntax.
+
+// #cgo CFLAGS: -Wno-unguarded-availability-new
+// #cgo !ios CFLAGS: -mmacosx-version-min=10.12
+// #cgo LDFLAGS: -framework QuartzCore -framework Foundation -framework CoreGraphics
+//
+// #include "ca_darwin.h"
+import "C"
+
 // Layer is an object that manages image-based content and
 // allows you to perform animations on that content.
 //
@@ -131,7 +141,10 @@ func (ml MetalLayer) SetMaximumDrawableCount(count int) {
 	if count < 2 || count > 3 {
 		panic(errors.New(fmt.Sprintf("failed trying to set maximumDrawableCount to %d outside of the valid range of [2, 3]", count)))
 	}
-	ml.metalLayer.Send(objc.RegisterName("setMaximumDrawableCount:"), count)
+	e := C.MetalLayer_SetMaximumDrawableCount(ml.Layer(), C.uint_t(count))
+	if e != nil {
+		panic(errors.New(C.GoString(e)))
+	}
 }
 
 // SetDisplaySyncEnabled controls whether the Metal layer and its drawables
@@ -163,11 +176,11 @@ func (ml MetalLayer) SetDrawableSize(width, height int) {
 //
 // Reference: https://developer.apple.com/documentation/quartzcore/cametallayer/1478172-nextdrawable.
 func (ml MetalLayer) NextDrawable() (MetalDrawable, error) {
-	md := ml.metalLayer.Send(objc.RegisterName("nextDrawable"))
-	if md == 0 {
+	md := C.MetalLayer_NextDrawable(ml.Layer())
+	if md == nil {
 		return MetalDrawable{}, errors.New("nextDrawable returned nil")
 	}
-	return MetalDrawable{md}, nil
+	return MetalDrawable{objc.ID(md)}, nil
 }
 
 // PresentsWithTransaction returns a Boolean value that determines whether the layer presents its content using a Core Animation transaction.
@@ -207,12 +220,12 @@ func (md MetalDrawable) Drawable() unsafe.Pointer {
 //
 // Reference: https://developer.apple.com/documentation/quartzcore/cametaldrawable/1478159-texture.
 func (md MetalDrawable) Texture() mtl.Texture {
-	return mtl.NewTexture(md.metalDrawable.Send(objc.RegisterName("texture")))
+	return mtl.NewTexture(objc.ID(C.MetalDrawable_Texture(md.Drawable())))
 }
 
 // Present presents the drawable onscreen as soon as possible.
 //
 // Reference: https://developer.apple.com/documentation/metal/mtldrawable/1470284-present.
 func (md MetalDrawable) Present() {
-	md.metalDrawable.Send(objc.RegisterName("present"))
+	C.MetalDrawable_Present(md.Drawable())
 }

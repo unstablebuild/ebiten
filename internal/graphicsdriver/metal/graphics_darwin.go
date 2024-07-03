@@ -24,13 +24,27 @@ import (
 
 	"github.com/ebitengine/purego/objc"
 
-	"github.com/hajimehoshi/ebiten/v2/internal/cocoa"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphics"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver/metal/ca"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver/metal/mtl"
 	"github.com/hajimehoshi/ebiten/v2/internal/shaderir"
 )
+
+// #cgo CFLAGS: -x objective-c
+// #cgo !ios CFLAGS: -mmacosx-version-min=10.12
+// #cgo LDFLAGS: -framework Foundation
+//
+// #import <Foundation/Foundation.h>
+//
+// static void* allocAutoreleasePool() {
+//   return [[NSAutoreleasePool alloc] init];
+// }
+//
+// static void releaseAutoreleasePool(void* pool) {
+//   [(NSAutoreleasePool*)pool release];
+// }
+import "C"
 
 type Graphics struct {
 	view view
@@ -61,7 +75,7 @@ type Graphics struct {
 	maxImageSize int
 	tmpTextures  []mtl.Texture
 
-	pool cocoa.NSAutoreleasePool
+	pool unsafe.Pointer
 }
 
 type stencilMode int
@@ -113,15 +127,15 @@ func NewGraphics() (graphicsdriver.Graphics, error) {
 func (g *Graphics) Begin() error {
 	// NSAutoreleasePool is required to release drawable correctly (#847).
 	// https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/Drawables.html
-	g.pool = cocoa.NSAutoreleasePool_new()
+	g.pool = C.allocAutoreleasePool()
 	return nil
 }
 
 func (g *Graphics) End(present bool) error {
 	g.flushIfNeeded(present)
 	g.screenDrawable = ca.MetalDrawable{}
-	g.pool.Release()
-	g.pool.ID = 0
+	C.releaseAutoreleasePool(g.pool)
+	g.pool = nil
 	return nil
 }
 
