@@ -314,11 +314,7 @@ func (u *UserInterface) nativeWindow() (uintptr, error) {
 }
 
 func (u *UserInterface) isNativeFullscreen() (bool, error) {
-	w, err := u.window.GetCocoaWindow()
-	if err != nil {
-		return false, err
-	}
-	return cocoa.NSWindow{ID: objc.ID(w)}.StyleMask()&cocoa.NSWindowStyleMaskFullScreen != 0, nil
+	return u.window.IsFullscreen()
 }
 
 func (u *UserInterface) isNativeFullscreenAvailable() bool {

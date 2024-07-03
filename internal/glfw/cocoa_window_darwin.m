@@ -1855,6 +1855,13 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* handle)
 extern OSStatus CGSSetWindowBackgroundBlurRadius(void* connection, NSInteger windowNumber, int radius);
 extern void* CGSDefaultConnectionForThread(void);
 
+GLFWAPI bool glfwIsCocoaWindowFullscreen(GLFWwindow *handle) {
+	_GLFWwindow* window = (_GLFWwindow*) handle;
+    _GLFW_REQUIRE_INIT_OR_RETURN(false);
+	const NSWindowStyleMask curr_mask = [window->ns.object styleMask];
+	return ((curr_mask & NSWindowStyleMaskFullScreen) != 0);
+}
+
 GLFWAPI void glfwSetCocoaWindowBlur(GLFWwindow *handle, int radius) {
 	_GLFWwindow* window = (_GLFWwindow*) handle;
     _GLFW_REQUIRE_INIT();

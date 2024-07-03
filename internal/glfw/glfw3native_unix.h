@@ -184,6 +184,17 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* window);
  */
 GLFWAPI void glfwSetCocoaWindowBlur(GLFWwindow *window, int radius);
 
+/*! @brief Returns whether the given window is natively in fullscreen mode.
+ *
+ *  @errors Possible errors include @ref GLFW_NOT_INITIALIZED.
+ *
+ *  @thread_safety This function may be called from any thread.  Access is not
+ *  synchronized.
+ *
+ *  @ingroup native
+ */
+GLFWAPI bool glfwIsCocoaWindowFullscreen(GLFWwindow *window);
+
 /*! @brief hides the window decorations but keeps the minimize
  *  maximize and close buttons embedded on the resulting window.
  *

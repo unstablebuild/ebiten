@@ -34,6 +34,12 @@ func (w *Window) GetCocoaWindow() (uintptr, error) {
 	return ret, fetchErrorIgnoringPlatformError()
 }
 
+// IsFullscreen returns true if window is natively in fullscreen.
+func (w *Window) IsFullscreen() (bool, error) {
+	ret := bool(C.glfwIsCocoaWindowFullscreen(w.data))
+	return ret, fetchErrorIgnoringPlatformError()
+}
+
 // GetNSGLContext returns the NSOpenGLContext of the window.
 func (w *Window) GetNSGLContext() (unsafe.Pointer, error) {
 	ret := C.workaround_glfwGetNSGLContext(w.data)

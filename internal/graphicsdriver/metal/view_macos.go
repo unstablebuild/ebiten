@@ -64,16 +64,6 @@ func (v *view) maximumDrawableCount() int {
 		return 3
 	}
 
-	// Use 3 in fullscren.
-	// Though this might degrade FPS, this is necessary to avoid mysterious rendering delays.
-	if v.isFullscreen() {
-		return 3
-	}
-
 	// Use 2 for a Wnidow to avoid mysterious blinking (#2883).
 	return 2
-}
-
-func (v *view) isFullscreen() bool {
-	return cocoa.NSWindow{ID: objc.ID(v.window)}.StyleMask()&cocoa.NSWindowStyleMaskFullScreen != 0
 }
