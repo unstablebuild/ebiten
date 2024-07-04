@@ -31,6 +31,38 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver/opengl"
 )
 
+// #cgo CFLAGS: -x objective-c
+// #cgo LDFLAGS: -framework AppKit
+//
+// #import <AppKit/AppKit.h>
+//
+// static CGDirectDisplayID currentMonitorID(uintptr_t windowPtr) {
+//   @autoreleasepool {
+//     NSScreen* screen = [NSScreen mainScreen];
+//     if (windowPtr) {
+//       NSWindow* window = (NSWindow*)windowPtr;
+//       if ([window isVisible]) {
+//         // When the window is visible, the window is already initialized.
+//         // [NSScreen mainScreen] sometimes tells a lie when the window is put across monitors (#703).
+//         screen = [window screen];
+//       }
+//     }
+//     NSDictionary* screenDictionary = [screen deviceDescription];
+//     NSNumber* screenID = [screenDictionary objectForKey:@"NSScreenNumber"];
+//     CGDirectDisplayID aID = [screenID unsignedIntValue];
+//     return aID;
+//   }
+// }
+//
+// static bool isNativeFullscreen(uintptr_t windowPtr) {
+//   if (!windowPtr) {
+//     return false;
+//   }
+//   NSWindow* window = (NSWindow*)windowPtr;
+//   return (window.styleMask & NSWindowStyleMaskFullScreen) != 0;
+// }
+import "C"
+
 var class_EbitengineWindowDelegate objc.Class
 
 func (u *UserInterface) initializePlatform() error {
@@ -281,28 +313,19 @@ func initialMonitorByOS() (*Monitor, error) {
 }
 
 func monitorFromWindowByOS(w *glfw.Window) (*Monitor, error) {
-	cocoaWindow, err := w.GetCocoaWindow()
+	cw, err := w.GetCocoaWindow()
 	if err != nil {
 		return nil, err
 	}
-	window := cocoa.NSWindow{ID: objc.ID(cocoaWindow)}
-	pool := cocoa.NSAutoreleasePool_new()
-	screen := cocoa.NSScreen_mainScreen()
-	if window.ID != 0 && window.IsVisible() {
-		// When the window is visible, the window is already initialized.
-		// [NSScreen mainScreen] sometimes tells a lie when the window is put across monitors (#703).
-		screen = window.Screen()
-	}
-	screenDictionary := screen.DeviceDescription()
-	screenID := cocoa.NSNumber{ID: screenDictionary.ObjectForKey(cocoa.NSString_alloc().InitWithUTF8String("NSScreenNumber").ID)}
-	aID := uintptr(screenID.UnsignedIntValue()) // CGDirectDisplayID
-	pool.Release()
+
+	id := uintptr(C.currentMonitorID(C.uintptr_t(cw)))
 	for _, m := range theMonitors.append(nil) {
 		cocoaMonitor, err := m.m.GetCocoaMonitor()
 		if err != nil {
 			return nil, err
 		}
-		if cocoaMonitor == aID {
+
+		if cocoaMonitor == id {
 			return m, nil
 		}
 	}
@@ -314,7 +337,11 @@ func (u *UserInterface) nativeWindow() (uintptr, error) {
 }
 
 func (u *UserInterface) isNativeFullscreen() (bool, error) {
-	return u.window.IsFullscreen()
+	cw, err := u.window.GetCocoaWindow()
+	if err != nil {
+		return false, err
+	}
+	return bool(C.isNativeFullscreen(C.uintptr_t(cw))), nil
 }
 
 func (u *UserInterface) isNativeFullscreenAvailable() bool {
