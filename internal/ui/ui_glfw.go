@@ -1236,6 +1236,11 @@ func (u *UserInterface) outsideSize() (float64, float64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+	if m == nil {
+		// workaround panic if primaryMonitor() returns no monitor,
+		// return the previous DPI
+		return float64(u.origWindowWidthInDIP), float64(u.origWindowHeightInDIP), nil
+	}
 	s := m.DeviceScaleFactor()
 	w := dipFromGLFWPixel(float64(ww), s)
 	h := dipFromGLFWPixel(float64(wh), s)
