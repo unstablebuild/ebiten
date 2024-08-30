@@ -74,6 +74,7 @@ type Graphics struct {
 	transparent  bool
 	maxImageSize int
 	tmpTextures  []mtl.Texture
+	tmpVars      [][]uint32
 
 	pool unsafe.Pointer
 }
@@ -635,7 +636,8 @@ func (g *Graphics) DrawTriangles(dstID graphicsdriver.ImageID, srcIDs [graphics.
 		srcs[i] = g.images[srcID]
 	}
 
-	uniformVars := make([][]uint32, len(g.shaders[shaderID].ir.Uniforms))
+	// re-use inoformVars slice from previous calls
+	uniformVars := g.ensureTmpVars(len(g.shaders[shaderID].ir.Uniforms))
 
 	// Set the additional uniform variables.
 	var idx int
@@ -655,16 +657,16 @@ func (g *Graphics) DrawTriangles(dstID graphicsdriver.ImageID, srcIDs [graphics.
 		switch t.Main {
 		case shaderir.Vec3, shaderir.IVec3:
 			// float3 requires 16-byte alignment (#2463).
-			v1 := make([]uint32, 4)
+			var v1 [4]uint32
 			copy(v1[0:3], uniforms[idx:idx+3])
-			uniformVars[i] = v1
+			uniformVars[i] = v1[:]
 		case shaderir.Mat3:
 			// float3x3 requires 16-byte alignment (#2036).
-			v1 := make([]uint32, 12)
+			var v1 [12]uint32
 			copy(v1[0:3], uniforms[idx:idx+3])
 			copy(v1[4:7], uniforms[idx+3:idx+6])
 			copy(v1[8:11], uniforms[idx+6:idx+9])
-			uniformVars[i] = v1
+			uniformVars[i] = v1[:]
 		case shaderir.Array:
 			switch t.Sub[0].Main {
 			case shaderir.Vec3, shaderir.IVec3:
@@ -780,6 +782,18 @@ func (g *Graphics) addShader(shader *Shader) {
 
 func (g *Graphics) removeShader(shader *Shader) {
 	delete(g.shaders, shader.id)
+}
+
+func (g *Graphics) ensureTmpVars(n int) [][]uint32 {
+	if cap(g.tmpVars) < n {
+		g.tmpVars = make([][]uint32, n)
+	}
+
+	ret := g.tmpVars[:n]
+	for i := range ret {
+		ret[i] = nil
+	}
+	return ret
 }
 
 type Image struct {
