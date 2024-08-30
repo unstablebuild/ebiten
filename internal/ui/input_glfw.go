@@ -54,14 +54,6 @@ func (u *UserInterface) registerInputCallbacks() error {
 	return nil
 }
 
-func (u *UserInterface) updateInputState() error {
-	var err error
-	u.mainThread.Call(func() {
-		err = u.updateInputStateImpl()
-	})
-	return err
-}
-
 // updateInputStateImpl must be called from the main thread.
 func (u *UserInterface) updateInputStateImpl() error {
 	u.m.Lock()
@@ -120,31 +112,6 @@ func (u *UserInterface) updateInputStateImpl() error {
 		return err
 	}
 	return nil
-}
-
-func (u *UserInterface) KeyName(key Key) string {
-	if !u.isRunning() {
-		return ""
-	}
-
-	gk, ok := uiKeyToGLFWKey[key]
-	if !ok {
-		return ""
-	}
-
-	var name string
-	u.mainThread.Call(func() {
-		if u.isTerminated() {
-			return
-		}
-		n, err := glfw.GetKeyName(gk, 0)
-		if err != nil {
-			u.setError(err)
-			return
-		}
-		name = n
-	})
-	return name
 }
 
 func (u *UserInterface) saveCursorPosition() {
