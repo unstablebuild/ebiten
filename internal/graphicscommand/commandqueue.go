@@ -45,18 +45,6 @@ const (
 
 var vsyncEnabled int32 = 1
 
-func SetVsyncEnabled(enabled bool, graphicsDriver graphicsdriver.Graphics) {
-	if enabled {
-		atomic.StoreInt32(&vsyncEnabled, 1)
-	} else {
-		atomic.StoreInt32(&vsyncEnabled, 0)
-	}
-
-	runOnRenderThread(func() {
-		graphicsDriver.SetVsyncEnabled(enabled)
-	}, true)
-}
-
 // FlushCommands flushes the command queue and present the screen if needed.
 // If endFrame is true, the current screen might be used to present.
 func FlushCommands(graphicsDriver graphicsdriver.Graphics, endFrame bool) error {
@@ -179,51 +167,6 @@ func (q *commandQueue) Enqueue(command command) {
 	q.commands = append(q.commands, command)
 }
 
-// Flush flushes the command queue.
-func (q *commandQueue) Flush(graphicsDriver graphicsdriver.Graphics, endFrame bool) error {
-	if err := q.err.Load(); err != nil {
-		return err.(error)
-	}
-
-	var sync bool
-	// Disable asynchronous rendering when vsync is on, as this causes a rendering delay (#2822).
-	if endFrame && atomic.LoadInt32(&vsyncEnabled) != 0 {
-		sync = true
-	}
-	if !sync {
-		for _, c := range q.commands {
-			if c.NeedsSync() {
-				sync = true
-				break
-			}
-		}
-	}
-
-	logger := debug.SwitchLogger()
-
-	var flushErr error
-	runOnRenderThread(func() {
-		defer logger.Flush()
-
-		if err := q.flush(graphicsDriver, endFrame, logger); err != nil {
-			if sync {
-				flushErr = err
-				return
-			}
-			q.err.Store(err)
-			return
-		}
-
-		theCommandQueueManager.putCommandQueue(q)
-	}, sync)
-
-	if sync && flushErr != nil {
-		return flushErr
-	}
-
-	return nil
-}
-
 func (q *commandQueue) endFlush(
 	graphicsDriver graphicsdriver.Graphics, endFrame bool,
 ) (err error) {
@@ -267,7 +210,7 @@ func (q *commandQueue) flush(graphicsDriver graphicsdriver.Graphics, endFrame bo
 
 	es := q.indices
 	vs := q.vertices
-	logger.Logf("Graphics commands:\n")
+	// logger.Logf("Graphics commands:\n")
 
 	if err := graphicsDriver.Begin(); err != nil {
 		return err
@@ -302,7 +245,7 @@ func (q *commandQueue) flush(graphicsDriver graphicsdriver.Graphics, endFrame bo
 				_ = q.endFlush(graphicsDriver, endFrame)
 				return err
 			}
-			logger.Logf("  %s\n", c)
+			// logger.Logf("  %s\n", c)
 			// TODO: indexOffset should be reset if the command type is different
 			// from the previous one. This fix is needed when another drawing command is
 			// introduced than drawTrianglesCommand.
