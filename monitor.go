@@ -53,8 +53,8 @@ func (m *MonitorType) Size() (int, int) {
 
 // Monitor returns the current monitor.
 func Monitor() *MonitorType {
-	m := ui.Get().Monitor()
-	if m == nil {
+	m, ok := ui.Get().Monitor()
+	if !ok {
 		return nil
 	}
 	return (*MonitorType)(m)

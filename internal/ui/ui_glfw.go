@@ -270,7 +270,7 @@ func (u *UserInterface) setWindowMonitor(monitor *Monitor) error {
 	}
 
 	// Ignore if it is the same monitor.
-	m, err := u.currentMonitor()
+	m, _, err := u.currentMonitor()
 	if err != nil {
 		return err
 	}
@@ -728,12 +728,15 @@ func (u *UserInterface) registerWindowFramebufferSizeCallback() error {
 
 			// The framebuffer size is always scaled by the device scale factor (#1975).
 			// See also the implementation in uiContext.updateOffscreen.
-			m, err := u.currentMonitor()
+			m, ok, err := u.currentMonitor()
 			if err != nil {
 				u.setError(err)
 				return
 			}
-			s := m.DeviceScaleFactor()
+			s := 1.0
+			if ok {
+				s = m.DeviceScaleFactor()
+			}
 			ww := int(float64(w) / s)
 			wh := int(float64(h) / s)
 			if err := u.setWindowSizeInDIP(ww, wh, false); err != nil {
@@ -979,11 +982,11 @@ func (u *UserInterface) outsideSize() (float64, float64, error) {
 		// On macOS's native fullscreen, the window's size returns a more precise size
 		// reflecting the adjustment of the view size (#1745).
 		var w, h float64
-		m, err := u.currentMonitor()
+		m, ok, err := u.currentMonitor()
 		if err != nil {
 			return 0, 0, err
 		}
-		if m != nil {
+		if ok {
 			w, h = m.sizeInDIP()
 		}
 		return w, h, nil
@@ -1004,11 +1007,11 @@ func (u *UserInterface) outsideSize() (float64, float64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	m, err := u.currentMonitor()
+	m, ok, err := u.currentMonitor()
 	if err != nil {
 		return 0, 0, err
 	}
-	if m == nil {
+	if !ok {
 		// workaround panic if primaryMonitor() returns no monitor,
 		// return the previous DPI
 		return float64(u.origWindowWidthInDIP), float64(u.origWindowHeightInDIP), nil
@@ -1072,7 +1075,6 @@ func (u *UserInterface) update() (float64, float64, error) {
 		var err error
 		u.darwinInitOnce.Do(func() {
 			// On macOS, window decoration should be initialized once after buffers are swapped (#2600).
-			var err error
 			switch u.isInitWindowDecorated() {
 			case DecorationsNone:
 				err = u.window.SetAttrib(glfw.Decorated, glfw.False)
@@ -1127,12 +1129,15 @@ func (u *UserInterface) update() (float64, float64, error) {
 				return
 			}
 
-			m, e := u.currentMonitor()
+			m, ok, e := u.currentMonitor()
 			if e != nil {
 				err = e
 				return
 			}
-			s := m.DeviceScaleFactor()
+			s := 1.0
+			if ok {
+				s = m.DeviceScaleFactor()
+			}
 			newW := int(dipToGLFWPixel(float64(u.origWindowWidthInDIP), s))
 			newH := int(dipToGLFWPixel(float64(u.origWindowHeightInDIP), s))
 
@@ -1232,13 +1237,16 @@ func (u *UserInterface) loopGame() (ferr error) {
 
 // updateWindowSizeLimits must be called from the main thread.
 func (u *UserInterface) updateWindowSizeLimits() error {
-	m, err := u.currentMonitor()
+	m, ok, err := u.currentMonitor()
 	if err != nil {
 		return err
 	}
 	minw, minh, maxw, maxh := u.getWindowSizeLimitsInDIP()
 
-	s := m.DeviceScaleFactor()
+	s := 1.0
+	if ok {
+		s = m.DeviceScaleFactor()
+	}
 	if minw < 0 {
 		// Always set the minimum window width.
 		mw, err := u.minimumWindowWidth()
@@ -1322,11 +1330,14 @@ func (u *UserInterface) setWindowSizeInDIP(width, height int, callSetSize bool) 
 		height = 1
 	}
 
-	mon, err := u.currentMonitor()
+	mon, ok, err := u.currentMonitor()
 	if err != nil {
 		return err
 	}
-	scale := mon.DeviceScaleFactor()
+	scale := 1.0
+	if ok {
+		scale = mon.DeviceScaleFactor()
+	}
 	if u.origWindowWidthInDIP == width && u.origWindowHeightInDIP == height && u.lastDeviceScaleFactor == scale {
 		return nil
 	}
@@ -1346,11 +1357,14 @@ func (u *UserInterface) setWindowSizeInDIP(width, height int, callSetSize bool) 
 		if err != nil {
 			return err
 		}
-		m, err := u.currentMonitor()
+		m, ok, err := u.currentMonitor()
 		if err != nil {
 			return err
 		}
-		s := m.DeviceScaleFactor()
+		s := 1.0
+		if ok {
+			s = m.DeviceScaleFactor()
+		}
 		newW := int(dipToGLFWPixel(float64(width), s))
 		newH := int(dipToGLFWPixel(float64(height), s))
 		if oldW != newW || oldH != newH {
@@ -1419,11 +1433,11 @@ func (u *UserInterface) setFullscreen(fullscreen bool) error {
 				return err
 			}
 		} else {
-			m, err := u.currentMonitor()
+			m, ok, err := u.currentMonitor()
 			if err != nil {
 				return err
 			}
-			if m == nil {
+			if !ok {
 				return nil
 			}
 
@@ -1447,11 +1461,14 @@ func (u *UserInterface) setFullscreen(fullscreen bool) error {
 	// TODO: Why?
 	origX, origY := u.origWindowPos()
 
-	m, err := u.currentMonitor()
+	m, ok, err := u.currentMonitor()
 	if err != nil {
 		return err
 	}
-	s := m.DeviceScaleFactor()
+	s := 1.0
+	if ok {
+		s = m.DeviceScaleFactor()
+	}
 	ww := int(dipToGLFWPixel(float64(u.origWindowWidthInDIP), s))
 	wh := int(dipToGLFWPixel(float64(u.origWindowHeightInDIP), s))
 	if u.isNativeFullscreenAvailable() {
@@ -1531,9 +1548,10 @@ func (u *UserInterface) minimumWindowWidth() (int, error) {
 // currentMonitor returns the current active monitor.
 //
 // currentMonitor must be called on the main thread.
-func (u *UserInterface) currentMonitor() (*Monitor, error) {
+func (u *UserInterface) currentMonitor() (*Monitor, bool, error) {
 	if u.window == nil {
-		return u.getInitMonitor(), nil
+		m := u.getInitMonitor()
+		return m, m != nil, nil
 	}
 
 	// Getting a monitor from a window position is not reliable in general (e.g., when a window is put across
@@ -1541,31 +1559,32 @@ func (u *UserInterface) currentMonitor() (*Monitor, error) {
 	// Get the monitor which the current window belongs to. This requires OS API.
 	m, err := monitorFromWindowByOS(u.window)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if m != nil {
-		return m, nil
+		return m, true, nil
 	}
 
 	// As the fallback, detect the monitor from the window.
 	x, y, err := u.window.GetPos()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// On fullscreen, shift the position slightly. Otherwise, a wrong monitor could be detected, as the position is on the edge (#2794).
 	f, err := u.isFullscreen()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if f {
 		x++
 		y++
 	}
 	if m := theMonitors.monitorFromPosition(x, y); m != nil {
-		return m, nil
+		return m, true, nil
 	}
 
-	return theMonitors.primaryMonitor(), nil
+	primary := theMonitors.primaryMonitor()
+	return primary, primary != nil, nil
 }
 
 func (u *UserInterface) readInputState(inputState *InputState) {

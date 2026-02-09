@@ -60,23 +60,26 @@ func (u *UserInterface) KeyName(key Key) string {
 }
 
 // Monitor returns the window's current monitor. Returns nil if there is no current monitor yet.
-func (u *UserInterface) Monitor() *Monitor {
+func (u *UserInterface) Monitor() (*Monitor, bool) {
 	if !u.isRunning() {
-		return u.getInitMonitor()
+		m := u.getInitMonitor()
+		return m, m != nil
 	}
 	var monitor *Monitor
+	var ok bool
 	u.mainThread.Call(func() {
 		if u.isTerminated() {
 			return
 		}
-		m, err := u.currentMonitor()
+		m, isOk, err := u.currentMonitor()
 		if err != nil {
 			u.setError(err)
 			return
 		}
 		monitor = m
+		ok = isOk
 	})
-	return monitor
+	return monitor, ok
 }
 
 func (u *UserInterface) IsFullscreen() bool {
@@ -308,18 +311,20 @@ func (u *UserInterface) updateGame() error {
 	}
 
 	var outsideWidth, outsideHeight float64
-	var deviceScaleFactor float64
+	deviceScaleFactor := 1.0
 	var err error
 	if u.mainThread.Call(func() {
 		outsideWidth, outsideHeight, err = u.update()
 		if err != nil {
 			return
 		}
-		m, err := u.currentMonitor()
+		m, ok, err := u.currentMonitor()
 		if err != nil {
 			return
 		}
-		deviceScaleFactor = m.DeviceScaleFactor()
+		if ok {
+			deviceScaleFactor = m.DeviceScaleFactor()
+		}
 	}); err != nil {
 		return err
 	}

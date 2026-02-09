@@ -201,7 +201,11 @@ var (
 
 func initializeWindowPositionIfNeeded(width, height int) {
 	if atomic.LoadUint32(&windowPositionSetExplicitly) == 0 {
-		sw, sh := ui.Get().Monitor().Size()
+		sw, sh := 0, 0
+		m, ok := ui.Get().Monitor()
+		if ok {
+			sw, sh = m.Size()
+		}
 		x, y := ui.InitialWindowPosition(sw, sh, width, height)
 		ui.Get().Window().SetPosition(x, y)
 	}

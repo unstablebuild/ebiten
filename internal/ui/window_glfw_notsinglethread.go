@@ -315,14 +315,17 @@ func (w *glfwWindow) Position() (int, int) {
 			}
 			wx, wy = x, y
 		}
-		m, err := w.ui.currentMonitor()
+		m, ok, err := w.ui.currentMonitor()
 		if err != nil {
 			w.ui.setError(err)
 			return
 		}
-		wx -= m.boundsInGLFWPixels.Min.X
-		wy -= m.boundsInGLFWPixels.Min.Y
-		s := m.DeviceScaleFactor()
+		s := 1.0
+		if ok {
+			wx -= m.boundsInGLFWPixels.Min.X
+			wy -= m.boundsInGLFWPixels.Min.Y
+			s = m.DeviceScaleFactor()
+		}
 		xf := dipFromGLFWPixel(float64(wx), s)
 		yf := dipFromGLFWPixel(float64(wy), s)
 		x, y = int(xf), int(yf)
@@ -342,14 +345,16 @@ func (w *glfwWindow) SetPosition(x, y int) {
 		if w.ui.isTerminated() {
 			return
 		}
-		m, err := w.ui.currentMonitor()
+		m, ok, err := w.ui.currentMonitor()
 		if err != nil {
 			w.ui.setError(err)
 			return
 		}
-		if err := w.ui.setWindowPositionInDIP(x, y, m); err != nil {
-			w.ui.setError(err)
-			return
+		if ok {
+			if err := w.ui.setWindowPositionInDIP(x, y, m); err != nil {
+				w.ui.setError(err)
+				return
+			}
 		}
 	})
 }

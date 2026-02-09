@@ -74,11 +74,14 @@ func (u *UserInterface) updateInputStateImpl() error {
 		u.inputState.MouseButtonPressed[ub] = s == glfw.Press
 	}
 
-	m, err := u.currentMonitor()
+	m, ok, err := u.currentMonitor()
 	if err != nil {
 		return err
 	}
-	s := m.DeviceScaleFactor()
+	s := 1.0
+	if ok {
+		s = m.DeviceScaleFactor()
+	}
 
 	cx, cy := u.savedCursorX, u.savedCursorY
 	defer func() {

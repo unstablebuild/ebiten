@@ -17,5 +17,8 @@
 package ui
 
 func (u *UserInterface) ScreenSizeInFullscreen() (int, int) {
-	return u.Monitor().Size()
+	if m, ok := u.Monitor(); ok {
+		return m.Size()
+	}
+	return 0, 0
 }
