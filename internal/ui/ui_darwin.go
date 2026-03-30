@@ -465,3 +465,18 @@ func initializeWindowAfterCreation(w *glfw.Window) error {
 func (u *UserInterface) skipTaskbar() error {
 	return nil
 }
+
+func (u *UserInterface) hideDockIconIfNeeded() {
+	if !shouldHideDockAfterFocus() {
+		return
+	}
+	app := cocoa.NSApplication_sharedApplication()
+	// Switch to Accessory policy to hide the Dock icon.
+	app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyAccessory)
+	// Toggle menu bar visibility to work around window-ordering glitches
+	// (Apple-recommended workaround).
+	cocoa.NSMenu_setMenuBarVisible(false)
+	cocoa.NSMenu_setMenuBarVisible(true)
+	// Re-activate to keep keyboard focus on this window.
+	app.ActivateIgnoringOtherApps(true)
+}

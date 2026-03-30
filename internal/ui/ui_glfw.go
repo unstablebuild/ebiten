@@ -161,7 +161,19 @@ func (u *UserInterface) init() error {
 
 var glfwSystemCursors = map[CursorShape]*glfw.Cursor{}
 
+func shouldDisableCocoaMenubarByEnv() bool {
+	return os.Getenv("EBITENGINE_COCOA_MENUBAR") == "0"
+}
+
+func shouldHideDockAfterFocus() bool {
+	return os.Getenv("EBITENGINE_COCOA_HIDE_DOCK") == "1"
+}
+
 func (u *UserInterface) initializeGLFW() error {
+	if shouldDisableCocoaMenubarByEnv() {
+		glfw.InitHint(glfw.CocoaMenubar, glfw.False)
+	}
+
 	if err := glfw.Init(); err != nil {
 		return err
 	}
@@ -1111,6 +1123,10 @@ func (u *UserInterface) update() (float64, float64, error) {
 			if err = u.window.Focus(); err != nil {
 				return
 			}
+
+			// Hide the Dock icon on macOS if requested via env var.
+			// Must be called after Show+Focus so the window has keyboard focus.
+			u.hideDockIconIfNeeded()
 
 			if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
 				return

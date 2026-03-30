@@ -30,6 +30,8 @@ var (
 	class_NSWindow          = objc.GetClass("NSWindow")
 	class_NSView            = objc.GetClass("NSView")
 	class_NSScreen          = objc.GetClass("NSScreen")
+	class_NSApplication     = objc.GetClass("NSApplication")
+	class_NSMenu            = objc.GetClass("NSMenu")
 )
 
 var (
@@ -63,6 +65,10 @@ var (
 	sel_deviceDescription                  = objc.RegisterName("deviceDescription")
 	sel_objectForKey                       = objc.RegisterName("objectForKey:")
 	sel_unsignedIntValue                   = objc.RegisterName("unsignedIntValue")
+	sel_sharedApplication                  = objc.RegisterName("sharedApplication")
+	sel_setActivationPolicy                = objc.RegisterName("setActivationPolicy:")
+	sel_activateIgnoringOtherApps          = objc.RegisterName("activateIgnoringOtherApps:")
+	sel_setMenuBarVisible                  = objc.RegisterName("setMenuBarVisible:")
 )
 
 const (
@@ -74,6 +80,12 @@ const (
 const (
 	NSWindowStyleMaskResizable  = 1 << 3
 	NSWindowStyleMaskFullScreen = 1 << 14
+)
+
+const (
+	NSApplicationActivationPolicyRegular    = 0
+	NSApplicationActivationPolicyAccessory  = 1
+	NSApplicationActivationPolicyProhibited = 2
 )
 
 type CGFloat = float64
@@ -120,6 +132,26 @@ type NSProcessInfo struct {
 
 func NSProcessInfo_processInfo() NSProcessInfo {
 	return NSProcessInfo{objc.ID(class_NSProcessInfo).Send(sel_processInfo)}
+}
+
+type NSApplication struct {
+	objc.ID
+}
+
+func NSApplication_sharedApplication() NSApplication {
+	return NSApplication{objc.ID(class_NSApplication).Send(sel_sharedApplication)}
+}
+
+func (a NSApplication) SetActivationPolicy(policy NSInteger) {
+	a.Send(sel_setActivationPolicy, policy)
+}
+
+func (a NSApplication) ActivateIgnoringOtherApps(flag bool) {
+	a.Send(sel_activateIgnoringOtherApps, flag)
+}
+
+func NSMenu_setMenuBarVisible(visible bool) {
+	objc.ID(class_NSMenu).Send(sel_setMenuBarVisible, visible)
 }
 
 type NSWindow struct {

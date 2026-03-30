@@ -205,6 +205,9 @@ func initializeWindowAfterCreation(w *glfw.Window) error {
 	return nil
 }
 
+func (u *UserInterface) hideDockIconIfNeeded() {
+}
+
 func (u *UserInterface) skipTaskbar() error {
 	return nil
 }
