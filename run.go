@@ -242,6 +242,17 @@ type RunGameOptions struct {
 	// The default (zero) value is false, which means that the window is focused.
 	InitUnfocused bool
 
+	// SkipCocoaMenubar indicates whether the macOS application should run as an
+	// accessory app without a Dock icon or menu bar.
+	//
+	// SkipCocoaMenubar is valid only on macOS.
+	// When true, Ebitengine changes the application's activation policy before
+	// creating the first window, which suppresses the Dock icon and menu bar for
+	// auxiliary GUI processes.
+	//
+	// The default (zero) value is false, which means that the macOS menu bar is enabled.
+	SkipCocoaMenubar bool
+
 	// ScreenTransparent indicates whether the window is transparent or not.
 	// ScreenTransparent is valid on desktops and browsers.
 	//
@@ -691,6 +702,7 @@ func toUIRunOptions(options *RunGameOptions) *ui.RunOptions {
 	if options == nil {
 		return &ui.RunOptions{
 			InitUnfocused:     atomic.LoadInt32(&initUnfocused) != 0,
+			SkipCocoaMenubar:  false,
 			ScreenTransparent: atomic.LoadInt32(&screenTransparent) != 0,
 			X11ClassName:      defaultX11ClassName,
 			X11InstanceName:   defaultX11InstanceName,
@@ -706,6 +718,7 @@ func toUIRunOptions(options *RunGameOptions) *ui.RunOptions {
 	return &ui.RunOptions{
 		GraphicsLibrary:   ui.GraphicsLibrary(options.GraphicsLibrary),
 		InitUnfocused:     options.InitUnfocused,
+		SkipCocoaMenubar:  options.SkipCocoaMenubar,
 		ScreenTransparent: options.ScreenTransparent,
 		SkipTaskbar:       options.SkipTaskbar,
 		SingleThread:      options.SingleThread,

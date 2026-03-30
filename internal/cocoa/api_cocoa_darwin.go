@@ -24,6 +24,7 @@ var (
 	class_NSInvocation      = objc.GetClass("NSInvocation")
 	class_NSMethodSignature = objc.GetClass("NSMethodSignature")
 	class_NSAutoreleasePool = objc.GetClass("NSAutoreleasePool")
+	class_NSApplication     = objc.GetClass("NSApplication")
 	class_NSString          = objc.GetClass("NSString")
 	class_NSProcessInfo     = objc.GetClass("NSProcessInfo")
 	class_NSColor           = objc.GetClass("NSColor")
@@ -36,6 +37,8 @@ var (
 	sel_alloc                              = objc.RegisterName("alloc")
 	sel_new                                = objc.RegisterName("new")
 	sel_release                            = objc.RegisterName("release")
+	sel_sharedApplication                  = objc.RegisterName("sharedApplication")
+	sel_setActivationPolicy                = objc.RegisterName("setActivationPolicy:")
 	sel_invocationWithMethodSignature      = objc.RegisterName("invocationWithMethodSignature:")
 	sel_setSelector                        = objc.RegisterName("setSelector:")
 	sel_setTarget                          = objc.RegisterName("setTarget:")
@@ -66,6 +69,10 @@ var (
 )
 
 const (
+	NSApplicationActivationPolicyRegular    = 0
+	NSApplicationActivationPolicyAccessory  = 1
+	NSApplicationActivationPolicyProhibited = 2
+
 	NSWindowCollectionBehaviorManaged           = 1 << 2
 	NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7
 	NSWindowCollectionBehaviorFullScreenNone    = 1 << 9
@@ -112,6 +119,18 @@ func NSColor_colorWithSRGBRedGreenBlueAlpha(red, green, blue, alpha CGFloat) (co
 
 type NSOperatingSystemVersion struct {
 	Major, Minor, Patch NSInteger
+}
+
+type NSApplication struct {
+	objc.ID
+}
+
+func NSApplication_sharedApplication() NSApplication {
+	return NSApplication{objc.ID(class_NSApplication).Send(sel_sharedApplication)}
+}
+
+func (a NSApplication) SetActivationPolicy(policy NSInteger) bool {
+	return a.Send(sel_setActivationPolicy, policy) != 0
 }
 
 type NSProcessInfo struct {

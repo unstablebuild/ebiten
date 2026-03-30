@@ -197,6 +197,20 @@ func (u *UserInterface) initializePlatform() error {
 	return nil
 }
 
+func (u *UserInterface) updateApplicationActivationPolicy(options *RunOptions) error {
+	if options == nil || !options.SkipCocoaMenubar {
+		return nil
+	}
+	app := cocoa.NSApplication_sharedApplication()
+	if app.ID == 0 {
+		return errors.New("ui: shared NSApplication was not available")
+	}
+	if !app.SetActivationPolicy(cocoa.NSApplicationActivationPolicyAccessory) {
+		return errors.New("ui: failed to set NSApplication activation policy")
+	}
+	return nil
+}
+
 type graphicsDriverCreatorImpl struct {
 	transparent bool
 }

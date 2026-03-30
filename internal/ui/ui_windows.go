@@ -34,6 +34,10 @@ func (u *UserInterface) initializePlatform() error {
 	return nil
 }
 
+func (u *UserInterface) updateApplicationActivationPolicy(options *RunOptions) error {
+	return nil
+}
+
 type graphicsDriverCreatorImpl struct {
 	transparent bool
 }

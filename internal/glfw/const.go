@@ -112,6 +112,8 @@ const (
 	Visible                = Hint(0x00020004)
 	X11ClassName           = Hint(0x00024001)
 	X11InstanceName        = Hint(0x00024002)
+
+	CocoaMenubar = Hint(0x00051002)
 )
 
 const (
