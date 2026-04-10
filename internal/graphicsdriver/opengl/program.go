@@ -106,13 +106,6 @@ var theArrayBufferLayout = arrayBufferLayout{
 	},
 }
 
-func init() {
-	vertexFloatCount := theArrayBufferLayout.totalBytes() / floatSizeInBytes
-	if graphics.VertexFloatCount != vertexFloatCount {
-		panic(fmt.Sprintf("vertex float num must be %d but %d", graphics.VertexFloatCount, vertexFloatCount))
-	}
-}
-
 type openGLState struct {
 	vertexArray uint32
 

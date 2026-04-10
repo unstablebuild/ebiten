@@ -18,6 +18,7 @@ package gamepaddb
 
 import (
 	_ "embed"
+	"sync"
 )
 
 // gamecontrollerdb.txt is downloaded at https://github.com/mdqinc/SDL_GameControllerDB.
@@ -39,11 +40,15 @@ var additionalGLFWGamepads = []byte(`
 78696e70757408000000000000000000,XInput Drum Kit (GLFW),platform:Windows,a:b0,b:b1,x:b2,y:b3,leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,leftstick:b8,rightstick:b9,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,dpup:h0.1,dpright:h0.2,dpdown:h0.4,dpleft:h0.8,
 `)
 
-func init() {
-	if err := Update(gamecontrollerdb_txt); err != nil {
-		panic(err)
-	}
-	if err := Update(additionalGLFWGamepads); err != nil {
-		panic(err)
-	}
+var loadDefaultMappingsOnce sync.Once
+
+func ensureDefaultMappingsLoaded() {
+	loadDefaultMappingsOnce.Do(func() {
+		if err := update(gamecontrollerdb_txt); err != nil {
+			panic(err)
+		}
+		if err := update(additionalGLFWGamepads); err != nil {
+			panic(err)
+		}
+	})
 }

@@ -88,19 +88,18 @@ type UserInterface struct {
 }
 
 var (
-	theUI *UserInterface
+	theUI     *UserInterface
+	theUIOnce sync.Once
 )
 
-func init() {
-	// newUserInterface() must be called in the main goroutine.
-	u, err := newUserInterface()
-	if err != nil {
-		panic(err)
-	}
-	theUI = u
-}
-
 func Get() *UserInterface {
+	theUIOnce.Do(func() {
+		u, err := newUserInterface()
+		if err != nil {
+			panic(err)
+		}
+		theUI = u
+	})
 	return theUI
 }
 

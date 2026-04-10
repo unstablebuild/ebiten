@@ -1051,10 +1051,6 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 	}, nil
 }
 
-func init() {
-
-}
-
 func min(a, b int) int {
 	if a < b {
 		return a

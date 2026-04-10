@@ -98,6 +98,10 @@ var (
 	mappingsM             sync.RWMutex
 )
 
+func ensureMappingsLoaded() {
+	ensureDefaultMappingsLoaded()
+}
+
 func parseLine(line string, platform platform) (id string, name string, buttons map[StandardButton]mapping, axes map[StandardAxis]mapping, err error) {
 	line = strings.TrimSpace(line)
 	if len(line) == 0 {
@@ -349,6 +353,7 @@ func axisMappings(id string) map[StandardAxis]mapping {
 }
 
 func HasStandardLayoutMapping(id string) bool {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -363,6 +368,7 @@ type GamepadState interface {
 }
 
 func Name(id string) string {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -370,6 +376,7 @@ func Name(id string) string {
 }
 
 func HasStandardAxis(id string, axis StandardAxis) bool {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -382,6 +389,7 @@ func HasStandardAxis(id string, axis StandardAxis) bool {
 }
 
 func StandardAxisValue(id string, axis StandardAxis, state GamepadState) float64 {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -425,6 +433,7 @@ func StandardAxisValue(id string, axis StandardAxis, state GamepadState) float64
 }
 
 func HasStandardButton(id string, button StandardButton) bool {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -437,6 +446,7 @@ func HasStandardButton(id string, button StandardButton) bool {
 }
 
 func StandardButtonValue(id string, button StandardButton, state GamepadState) float64 {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -489,6 +499,7 @@ func standardButtonValue(id string, button StandardButton, state GamepadState) f
 const ButtonPressedThreshold = 30.0 / 255.0
 
 func IsStandardButtonPressed(id string, button StandardButton, state GamepadState) bool {
+	ensureMappingsLoaded()
 	mappingsM.RLock()
 	defer mappingsM.RUnlock()
 
@@ -520,6 +531,11 @@ func IsStandardButtonPressed(id string, button StandardButton, state GamepadStat
 //
 // Update works atomically. If an error happens, nothing is updated.
 func Update(mappingData []byte) error {
+	ensureMappingsLoaded()
+	return update(mappingData)
+}
+
+func update(mappingData []byte) error {
 	mappingsM.Lock()
 	defer mappingsM.Unlock()
 

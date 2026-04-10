@@ -21,6 +21,7 @@ import (
 	_ "embed"
 	"image"
 	_ "image/png"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -31,14 +32,17 @@ var text_png []byte
 var (
 	debugPrintTextImage     *ebiten.Image
 	debugPrintTextSubImages = map[rune]*ebiten.Image{}
+	debugPrintTextOnce      sync.Once
 )
 
-func init() {
-	img, _, err := image.Decode(bytes.NewReader(text_png))
-	if err != nil {
-		panic(err)
-	}
-	debugPrintTextImage = ebiten.NewImageFromImage(img)
+func ensureDebugPrintTextImage() {
+	debugPrintTextOnce.Do(func() {
+		img, _, err := image.Decode(bytes.NewReader(text_png))
+		if err != nil {
+			panic(err)
+		}
+		debugPrintTextImage = ebiten.NewImageFromImage(img)
+	})
 }
 
 // DebugPrint draws the string str on the image on left top corner.
@@ -52,6 +56,7 @@ func DebugPrint(image *ebiten.Image, str string) {
 //
 // The available runes are in U+0000 to U+00FF, which is C0 Controls and Basic Latin and C1 Controls and Latin-1 Supplement.
 func DebugPrintAt(image *ebiten.Image, str string, x, y int) {
+	ensureDebugPrintTextImage()
 	drawDebugText(image, str, x, y)
 }
 

@@ -18,26 +18,33 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var (
-	whiteImage    = ebiten.NewImage(3, 3)
-	whiteSubImage = whiteImage.SubImage(image.Rect(1, 1, 2, 2)).(*ebiten.Image)
+	whiteImage     *ebiten.Image
+	whiteSubImage  *ebiten.Image
+	whiteImageOnce sync.Once
 )
 
-func init() {
-	b := whiteImage.Bounds()
-	pix := make([]byte, 4*b.Dx()*b.Dy())
-	for i := range pix {
-		pix[i] = 0xff
-	}
-	// This is hacky, but WritePixels is better than Fill in term of automatic texture packing.
-	whiteImage.WritePixels(pix)
+func ensureWhiteSubImage() {
+	whiteImageOnce.Do(func() {
+		whiteImage = ebiten.NewImage(3, 3)
+		whiteSubImage = whiteImage.SubImage(image.Rect(1, 1, 2, 2)).(*ebiten.Image)
+		b := whiteImage.Bounds()
+		pix := make([]byte, 4*b.Dx()*b.Dy())
+		for i := range pix {
+			pix[i] = 0xff
+		}
+		// This is hacky, but WritePixels is better than Fill in term of automatic texture packing.
+		whiteImage.WritePixels(pix)
+	})
 }
 
 func drawVerticesForUtil(dst *ebiten.Image, vs []ebiten.Vertex, is []uint16, clr color.Color, antialias bool) {
+	ensureWhiteSubImage()
 	r, g, b, a := clr.RGBA()
 	for i := range vs {
 		vs[i].SrcX = 1

@@ -17,21 +17,34 @@ package buffered
 import (
 	"fmt"
 	"image"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2/internal/atlas"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphics"
 	"github.com/hajimehoshi/ebiten/v2/internal/graphicsdriver"
 )
 
-var whiteImage *Image
+var (
+	whiteImage     *Image
+	whiteImageOnce sync.Once
+)
 
-func init() {
-	whiteImage = NewImage(3, 3, atlas.ImageTypeRegular)
-	pix := make([]byte, 4*3*3)
-	for i := range pix {
-		pix[i] = 0xff
-	}
-	whiteImage.WritePixels(pix, image.Rect(0, 0, 3, 3))
+func ensureWhiteImage() {
+	whiteImageOnce.Do(func() {
+		// Construct the image directly instead of calling NewImage,
+		// because NewImage itself calls ensureWhiteImage and would
+		// deadlock on sync.Once.
+		whiteImage = &Image{
+			img:    atlas.NewImage(3, 3, atlas.ImageTypeRegular),
+			width:  3,
+			height: 3,
+		}
+		pix := make([]byte, 4*3*3)
+		for i := range pix {
+			pix[i] = 0xff
+		}
+		whiteImage.WritePixels(pix, image.Rect(0, 0, 3, 3))
+	})
 }
 
 type Image struct {
@@ -53,6 +66,9 @@ type Image struct {
 }
 
 func NewImage(width, height int, imageType atlas.ImageType) *Image {
+	if whiteImage == nil {
+		ensureWhiteImage()
+	}
 	return &Image{
 		img:    atlas.NewImage(width, height, imageType),
 		width:  width,
