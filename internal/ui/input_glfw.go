@@ -72,13 +72,10 @@ func (u *UserInterface) updateInputStateImpl() error {
 	u.m.Lock()
 	defer u.m.Unlock()
 
-	for uk, gk := range uiKeyToGLFWKey {
-		s, err := u.window.GetKey(gk)
-		if err != nil {
-			return err
-		}
-		u.inputState.KeyPressed[uk] = s == glfw.Press
-	}
+	// Key state is now tracked via discrete key events from the
+	// SetKeyCallback registered in registerInputCallbacks.
+	// The per-frame GetKey polling loop has been removed.
+
 	for gb, ub := range glfwMouseButtonToMouseButton {
 		s, err := u.window.GetMouseButton(gb)
 		if err != nil {

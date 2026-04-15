@@ -97,15 +97,15 @@ func InputChars() []rune {
 
 // IsKeyPressed returns a boolean indicating whether key is pressed.
 //
-// If you want to know whether the key started being pressed in the current tick,
-// use inpututil.IsKeyJustPressed
+// Deprecated: On GLFW desktop platforms, key state is no longer polled
+// per frame. IsKeyPressed always returns false on those platforms.
+// Use [AppendKeyEvents] instead, which provides discrete press/release/repeat
+// events from the OS with correct ordering and modifier information.
 //
-// Note that a Key represents a physical key of US keyboard layout.
-// For example, KeyQ represents Q key on US keyboards and ' (quote) key on Dvorak keyboards.
+// On other platforms (mobile, JS, Nintendo SDK), IsKeyPressed still works
+// as before.
 //
 // IsKeyPressed is concurrent-safe.
-//
-// On Android (ebitenmobile), EbitenView must be focusable to enable to handle keyboard keys.
 func IsKeyPressed(key Key) bool {
 	return theInputState.isKeyPressed(key)
 }
