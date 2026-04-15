@@ -19,6 +19,39 @@ import (
 	"unicode"
 )
 
+// KeyAction represents the action of a key event.
+type KeyAction int
+
+const (
+	// KeyRelease indicates a key was released.
+	KeyRelease KeyAction = 0
+	// KeyPress indicates a key was pressed.
+	KeyPress KeyAction = 1
+	// KeyRepeat indicates a key repeat from the OS.
+	KeyRepeat KeyAction = 2
+)
+
+// KeyModifier is a bitmask of modifier keys held during a key event.
+type KeyModifier int
+
+const (
+	// KeyModShift indicates the Shift key was held.
+	KeyModShift KeyModifier = 0x0001
+	// KeyModControl indicates the Control key was held.
+	KeyModControl KeyModifier = 0x0002
+	// KeyModAlt indicates the Alt/Option key was held.
+	KeyModAlt KeyModifier = 0x0004
+	// KeyModSuper indicates the Super/Meta/Command key was held.
+	KeyModSuper KeyModifier = 0x0008
+)
+
+// KeyEvent represents a discrete key event from the OS.
+type KeyEvent struct {
+	Key    Key
+	Action KeyAction
+	Mods   KeyModifier
+}
+
 type MouseButton int
 
 const (
@@ -47,6 +80,7 @@ type InputState struct {
 	WheelY             float64
 	Touches            []Touch
 	Runes              []rune
+	KeyEvents          []KeyEvent
 	WindowBeingClosed  bool
 	DroppedFiles       fs.FS
 }
@@ -60,6 +94,7 @@ func (i *InputState) copyAndReset(dst *InputState) {
 	dst.WheelY = i.WheelY
 	dst.Touches = append(dst.Touches[:0], i.Touches...)
 	dst.Runes = append(dst.Runes[:0], i.Runes...)
+	dst.KeyEvents = append(dst.KeyEvents[:0], i.KeyEvents...)
 	dst.WindowBeingClosed = i.WindowBeingClosed
 	dst.DroppedFiles = i.DroppedFiles
 
@@ -67,6 +102,7 @@ func (i *InputState) copyAndReset(dst *InputState) {
 	i.WheelX = 0
 	i.WheelY = 0
 	i.Runes = i.Runes[:0]
+	i.KeyEvents = i.KeyEvents[:0]
 
 	// Reset the members that are never reset until they are explicitly done.
 	i.WindowBeingClosed = false
@@ -78,4 +114,12 @@ func (i *InputState) appendRune(r rune) {
 		return
 	}
 	i.Runes = append(i.Runes, r)
+}
+
+func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier) {
+	i.KeyEvents = append(i.KeyEvents, KeyEvent{
+		Key:    key,
+		Action: action,
+		Mods:   mods,
+	})
 }

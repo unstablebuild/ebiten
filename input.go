@@ -23,6 +23,40 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/internal/ui"
 )
 
+// KeyAction represents the action of a key event.
+type KeyAction = ui.KeyAction
+
+const (
+	// KeyActionRelease indicates a key was released.
+	KeyActionRelease KeyAction = ui.KeyRelease
+	// KeyActionPress indicates a key was pressed.
+	KeyActionPress KeyAction = ui.KeyPress
+	// KeyActionRepeat indicates a key repeat from the OS.
+	KeyActionRepeat KeyAction = ui.KeyRepeat
+)
+
+// KeyModifier is a bitmask of modifier keys held during a key event.
+type KeyModifier = ui.KeyModifier
+
+const (
+	// KeyModShift indicates the Shift key was held.
+	KeyModShift KeyModifier = ui.KeyModShift
+	// KeyModControl indicates the Control key was held.
+	KeyModControl KeyModifier = ui.KeyModControl
+	// KeyModAlt indicates the Alt/Option key was held.
+	KeyModAlt KeyModifier = ui.KeyModAlt
+	// KeyModSuper indicates the Super/Meta/Command key was held.
+	KeyModSuper KeyModifier = ui.KeyModSuper
+)
+
+// KeyEvent represents a discrete key event from the OS. Each KeyEvent
+// carries a Key, an Action (Press/Release/Repeat), and a Mods bitmask.
+type KeyEvent struct {
+	Key    Key
+	Action KeyAction
+	Mods   KeyModifier
+}
+
 // AppendInputChars appends "printable" runes, read from the keyboard at the time Update is called, to runes,
 // and returns the extended buffer.
 // Giving a slice that already has enough capacity works efficiently.
@@ -37,6 +71,21 @@ import (
 // On Android (ebitenmobile), EbitenView must be focusable to enable to handle keyboard keys.
 func AppendInputChars(runes []rune) []rune {
 	return theInputState.appendInputChars(runes)
+}
+
+// AppendKeyEvents appends discrete key events that occurred since the last Update
+// to events, and returns the extended buffer.
+// Giving a slice that already has enough capacity works efficiently.
+//
+// Each KeyEvent carries a Key, an Action (Press/Release/Repeat), and a Mods bitmask.
+// Key repeat events come from the OS, not from polling — this provides precise
+// press/release/repeat semantics without manual repeat tracking.
+//
+// AppendKeyEvents is concurrent-safe.
+//
+// On Android (ebitenmobile), EbitenView must be focusable to enable to handle keyboard keys.
+func AppendKeyEvents(events []KeyEvent) []KeyEvent {
+	return theInputState.appendKeyEvents(events)
 }
 
 // InputChars return "printable" runes read from the keyboard at the time Update is called.
@@ -399,6 +448,19 @@ func (i *inputState) appendInputChars(runes []rune) []rune {
 	i.m.Lock()
 	defer i.m.Unlock()
 	return append(runes, i.state.Runes...)
+}
+
+func (i *inputState) appendKeyEvents(events []KeyEvent) []KeyEvent {
+	i.m.Lock()
+	defer i.m.Unlock()
+	for _, ke := range i.state.KeyEvents {
+		events = append(events, KeyEvent{
+			Key:    Key(ke.Key),
+			Action: KeyAction(ke.Action),
+			Mods:   KeyModifier(ke.Mods),
+		})
+	}
+	return events
 }
 
 func (i *inputState) isKeyPressed(key Key) bool {
