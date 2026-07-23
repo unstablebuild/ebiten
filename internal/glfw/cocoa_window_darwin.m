@@ -537,7 +537,13 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
     _glfwInputKey(window, key, [event keyCode], GLFW_PRESS, mods);
 
-    [self interpretKeyEvents:@[event]];
+    // A Command-modified key never yields inserted text, so running it
+    // through -interpretKeyEvents: only routes it to an unhandled action
+    // selector and makes AppKit ring the system bell. The key already
+    // reached GLFW via _glfwInputKey above, so skip text interpretation
+    // for Command chords to suppress that beep.
+    if (!([event modifierFlags] & NSEventModifierFlagCommand))
+        [self interpretKeyEvents:@[event]];
 }
 
 - (void)flagsChanged:(NSEvent *)event
