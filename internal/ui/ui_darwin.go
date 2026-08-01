@@ -194,6 +194,10 @@ func (u *UserInterface) initializePlatform() error {
 	}
 	class_EbitengineWindowDelegate = d
 
+	if err := u.installNestedRunLoopTicker(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

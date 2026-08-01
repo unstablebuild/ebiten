@@ -108,6 +108,12 @@ type userInterfaceImpl struct {
 	showWindowOnce        sync.Once
 	bufferOnceSwappedOnce sync.Once
 
+	// pollingEvents and nestedTickInProgress support the nested
+	// run-loop ticker on macOS (see nestedrunloop_darwin.go). Both are
+	// only touched on the main thread.
+	pollingEvents        bool
+	nestedTickInProgress bool
+
 	m sync.RWMutex
 }
 
@@ -1181,13 +1187,19 @@ func (u *UserInterface) update() (float64, float64, error) {
 
 	if u.fpsMode != FPSModeVsyncOffMinimum {
 		// TODO: Updating the input can be skipped when clock.Update returns 0 (#1367).
+		u.pollingEvents = true
 		if err := glfw.PollEvents(); err != nil {
+			u.pollingEvents = false
 			return 0, 0, err
 		}
+		u.pollingEvents = false
 	} else {
+		u.pollingEvents = true
 		if err := glfw.WaitEvents(); err != nil {
+			u.pollingEvents = false
 			return 0, 0, err
 		}
+		u.pollingEvents = false
 	}
 
 	for !u.isRunnableOnUnfocused() {
@@ -1221,9 +1233,12 @@ func (u *UserInterface) update() (float64, float64, error) {
 		}
 		// Wait for an arbitrary period to avoid busy loop.
 		time.Sleep(time.Second / 60)
+		u.pollingEvents = true
 		if err := glfw.PollEvents(); err != nil {
+			u.pollingEvents = false
 			return 0, 0, err
 		}
+		u.pollingEvents = false
 	}
 
 	if err := hook.ResumeAudio(); err != nil {
