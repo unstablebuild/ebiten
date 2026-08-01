@@ -251,6 +251,9 @@ func (q *commandQueue) flush(graphicsDriver graphicsdriver.Graphics, endFrame bo
 			// introduced than drawTrianglesCommand.
 			if dtc, ok := c.(*drawTrianglesCommand); ok {
 				indexOffset += dtc.numIndices()
+				if len(dtc.dstRegions) > 0 {
+					atomic.AddInt64(&drawTrianglesCommandCount, 1)
+				}
 			}
 		}
 		cs = cs[nc:]
