@@ -98,6 +98,16 @@ func (u *UserInterface) GraphicsDriverForTesting() graphicsdriver.Graphics {
 	return u.graphicsDriver
 }
 
+// SetGraphicsDriverForTesting installs a graphics driver on the global
+// UserInterface without running the normal windowed initialization. It
+// exists so headless benchmarks (see the benchdraw package) can route
+// ReadPixels and other driver-backed operations through a no-op driver
+// instead of dereferencing a nil driver. It must only be used in tests
+// and benchmarks.
+func (u *UserInterface) SetGraphicsDriverForTesting(g graphicsdriver.Graphics) {
+	u.graphicsDriver = g
+}
+
 type GraphicsLibrary int
 
 const (
