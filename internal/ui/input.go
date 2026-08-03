@@ -110,10 +110,23 @@ func (i *InputState) copyAndReset(dst *InputState) {
 }
 
 func (i *InputState) appendRune(r rune) {
-	if !unicode.IsPrint(r) {
+	if !unicode.IsPrint(r) && !isEmojiSequenceRune(r) {
 		return
 	}
 	i.Runes = append(i.Runes, r)
+}
+
+// isEmojiSequenceRune reports whether r is a zero-width, non-printable
+// code point that nonetheless composes an emoji grapheme cluster and so
+// must be preserved as text input. IMEs and the platform emoji picker
+// deliver these through the character callback: the zero-width joiner
+// (U+200D) stitches family/profession sequences, and the tag characters
+// (U+E0020..U+E007F) encode subdivision flags such as 🏴󠁧󠁢󠁳󠁣󠁴󠁿. Dropping them
+// via the unicode.IsPrint filter would split a single emoji into its
+// component glyphs. Emoji variation selectors and skin-tone modifiers are
+// already printable, so they do not need to be listed here.
+func isEmojiSequenceRune(r rune) bool {
+	return r == '\u200d' || (r >= '\U000E0020' && r <= '\U000E007F')
 }
 
 func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier) {
