@@ -45,11 +45,48 @@ const (
 	KeyModSuper KeyModifier = 0x0008
 )
 
-// KeyEvent represents a discrete key event from the OS.
-type KeyEvent struct {
+// InputEventKind distinguishes the kinds of input observation reported by
+// the platform.
+type InputEventKind int
+
+const (
+	// InputEventKindKey is a key transition (press, release or OS repeat).
+	InputEventKindKey InputEventKind = iota
+	// InputEventKindText is a committed Unicode code point.
+	InputEventKindText
+)
+
+// InputSource identifies the native key action that produced an input
+// observation. Key transitions that can produce text and every code point
+// the platform translated from them share one nonzero source. Zero means
+// the observation has no known source, as for a standalone IME commit.
+type InputSource uint64
+
+// InputEvent is a single ordered input observation.
+//
+// Key transitions and committed text are related observations rather than
+// mutually exclusive streams: one physical action may report a key
+// transition and zero, one or many code points. Source expresses the
+// causality the platform actually knows; consumers must not infer it from
+// rune equality, modifiers alone, or membership in the same update.
+type InputEvent struct {
+	Kind InputEventKind
+
+	// Key, Action and Mods are set for InputEventKindKey.
 	Key    Key
 	Action KeyAction
 	Mods   KeyModifier
+
+	// Rune and NormalText are set for InputEventKindText. Mods carries the
+	// native modifier mask reported alongside the code point.
+	Rune rune
+	// NormalText is the platform's own classification of the code point as
+	// ordinary typed text rather than the side effect of a shortcut. It is
+	// not derived from Mods: text-producing layouts such as AltGr report
+	// normal text while holding Ctrl+Alt.
+	NormalText bool
+
+	Source InputSource
 }
 
 type MouseButton int
@@ -79,8 +116,7 @@ type InputState struct {
 	WheelX             float64
 	WheelY             float64
 	Touches            []Touch
-	Runes              []rune
-	KeyEvents          []KeyEvent
+	InputEvents        []InputEvent
 	WindowBeingClosed  bool
 	DroppedFiles       fs.FS
 }
@@ -93,27 +129,37 @@ func (i *InputState) copyAndReset(dst *InputState) {
 	dst.WheelX = i.WheelX
 	dst.WheelY = i.WheelY
 	dst.Touches = append(dst.Touches[:0], i.Touches...)
-	dst.Runes = append(dst.Runes[:0], i.Runes...)
-	dst.KeyEvents = append(dst.KeyEvents[:0], i.KeyEvents...)
+	dst.InputEvents = append(dst.InputEvents[:0], i.InputEvents...)
 	dst.WindowBeingClosed = i.WindowBeingClosed
 	dst.DroppedFiles = i.DroppedFiles
 
 	// Reset the members that are updated by deltas, rather than absolute values.
 	i.WheelX = 0
 	i.WheelY = 0
-	i.Runes = i.Runes[:0]
-	i.KeyEvents = i.KeyEvents[:0]
+	i.InputEvents = i.InputEvents[:0]
 
 	// Reset the members that are never reset until they are explicitly done.
 	i.WindowBeingClosed = false
 	i.DroppedFiles = nil
 }
 
+// appendRune records text that has no known originating key action, such as
+// input from a platform without key/text causality information.
 func (i *InputState) appendRune(r rune) {
+	i.appendTextInput(r, 0, true, 0)
+}
+
+func (i *InputState) appendTextInput(r rune, mods KeyModifier, normalText bool, source InputSource) {
 	if !unicode.IsPrint(r) && !isEmojiSequenceRune(r) {
 		return
 	}
-	i.Runes = append(i.Runes, r)
+	i.InputEvents = append(i.InputEvents, InputEvent{
+		Kind:       InputEventKindText,
+		Mods:       mods,
+		Rune:       r,
+		NormalText: normalText,
+		Source:     source,
+	})
 }
 
 // isEmojiSequenceRune reports whether r is a zero-width, non-printable
@@ -129,10 +175,12 @@ func isEmojiSequenceRune(r rune) bool {
 	return r == '\u200d' || (r >= '\U000E0020' && r <= '\U000E007F')
 }
 
-func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier) {
-	i.KeyEvents = append(i.KeyEvents, KeyEvent{
+func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier, source InputSource) {
+	i.InputEvents = append(i.InputEvents, InputEvent{
+		Kind:   InputEventKindKey,
 		Key:    key,
 		Action: action,
 		Mods:   mods,
+		Source: source,
 	})
 }

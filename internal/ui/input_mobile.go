@@ -35,7 +35,9 @@ func (u *UserInterface) updateInputStateFromOutside(keys map[Key]struct{}, runes
 		u.inputState.KeyPressed[k] = ok
 	}
 
-	u.inputState.Runes = append(u.inputState.Runes, runes...)
+	for _, r := range runes {
+		u.inputState.appendRune(r)
+	}
 
 	u.touches = u.touches[:0]
 	for _, t := range touches {

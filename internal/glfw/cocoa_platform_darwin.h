@@ -101,6 +101,12 @@ typedef struct _GLFWwindowNS
     // since the last cursor motion event was processed
     // This is kept to counteract Cocoa doing the same internally
     double          cursorWarpDeltaX, cursorWarpDeltaY;
+
+    // The source ID of the key action AppKit is currently interpreting, so
+    // every code point -insertText: produces for it stays attributed to it.
+    // Zero while no key action is being interpreted, which is how a
+    // standalone input method commit is reported.
+    unsigned long long keyInputSource;
 } _GLFWwindowNS;
 
 // Cocoa-specific global data

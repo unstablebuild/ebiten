@@ -12,7 +12,17 @@ import (
 
 const stick = 3
 
-func (w *Window) inputKey(key Key, scancode int, action Action, mods ModifierKey) {
+var nextInputSource InputSource
+
+// newInputSource allocates the next input source ID. IDs are never reused, so
+// one can safely be held across updates while waiting for text that the
+// platform delivers in a later message.
+func newInputSource() InputSource {
+	nextInputSource++
+	return nextInputSource
+}
+
+func (w *Window) inputKey(key Key, scancode int, action Action, mods ModifierKey, source InputSource) {
 	if key >= 0 && key <= KeyLast {
 		var repeated bool
 
@@ -42,9 +52,13 @@ func (w *Window) inputKey(key Key, scancode int, action Action, mods ModifierKey
 	if w.callbacks.key != nil {
 		w.callbacks.key(w, key, scancode, action, mods)
 	}
+
+	if w.callbacks.inputkey != nil {
+		w.callbacks.inputkey(w, key, scancode, action, mods, source)
+	}
 }
 
-func (w *Window) inputChar(codepoint rune, mods ModifierKey, plain bool) {
+func (w *Window) inputChar(codepoint rune, mods ModifierKey, plain bool, source InputSource) {
 	if codepoint < 32 || (codepoint > 126 && codepoint < 160) {
 		return
 	}
@@ -55,6 +69,10 @@ func (w *Window) inputChar(codepoint rune, mods ModifierKey, plain bool) {
 
 	if w.callbacks.charmods != nil {
 		w.callbacks.charmods(w, codepoint, mods)
+	}
+
+	if w.callbacks.inputchar != nil {
+		w.callbacks.inputchar(w, codepoint, mods, plain, source)
 	}
 
 	if plain {
@@ -439,6 +457,24 @@ func (w *Window) SetCharModsCallback(cbfun CharModsCallback) (CharModsCallback, 
 	}
 	old := w.callbacks.charmods
 	w.callbacks.charmods = cbfun
+	return old, nil
+}
+
+func (w *Window) SetInputKeyCallback(cbfun InputKeyCallback) (InputKeyCallback, error) {
+	if !_glfw.initialized {
+		return nil, NotInitialized
+	}
+	old := w.callbacks.inputkey
+	w.callbacks.inputkey = cbfun
+	return old, nil
+}
+
+func (w *Window) SetInputCharCallback(cbfun InputCharCallback) (InputCharCallback, error) {
+	if !_glfw.initialized {
+		return nil, NotInitialized
+	}
+	old := w.callbacks.inputchar
+	w.callbacks.inputchar = cbfun
 	return old, nil
 }
 

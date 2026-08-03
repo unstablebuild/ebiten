@@ -711,7 +711,7 @@ func windowProc(hWnd windows.HWND, uMsg uint32, wParam _WPARAM, lParam _LPARAM) 
 			}
 
 			window.platform.highSurrogate = 0
-			window.inputChar(codepoint, getKeyMods(), uMsg != _WM_SYSCHAR)
+			window.inputChar(codepoint, getKeyMods(), uMsg != _WM_SYSCHAR, window.platform.keyInputSource)
 		}
 
 		return 0
@@ -724,7 +724,10 @@ func windowProc(hWnd windows.HWND, uMsg uint32, wParam _WPARAM, lParam _LPARAM) 
 			return 1
 		}
 
-		window.inputChar(rune(wParam), getKeyMods(), true)
+		// WM_UNICHAR comes from an independent input method engine rather
+		// than from translating one of this window's key messages, so it has
+		// no originating key action.
+		window.inputChar(rune(wParam), getKeyMods(), true, 0)
 		return 0
 
 	case _WM_KEYDOWN, _WM_SYSKEYDOWN, _WM_KEYUP, _WM_SYSKEYUP:
@@ -798,14 +801,23 @@ func windowProc(hWnd windows.HWND, uMsg uint32, wParam _WPARAM, lParam _LPARAM) 
 			// HACK: Release both Shift keys on Shift up event, as when both
 			//       are pressed the first release does not emit any event
 			// NOTE: The other half of this is in _glfwPlatformPollEvents
-			window.inputKey(KeyLeftShift, int(scancode), action, mods)
-			window.inputKey(KeyRightShift, int(scancode), action, mods)
+			window.platform.keyInputSource = newInputSource()
+			window.inputKey(KeyLeftShift, int(scancode), action, mods, window.platform.keyInputSource)
+			window.platform.keyInputSource = newInputSource()
+			window.inputKey(KeyRightShift, int(scancode), action, mods, window.platform.keyInputSource)
 		} else if wParam == _VK_SNAPSHOT {
 			// HACK: Key down is not reported for the Print Screen key
-			window.inputKey(key, int(scancode), Press, mods)
-			window.inputKey(key, int(scancode), Release, mods)
+			window.platform.keyInputSource = newInputSource()
+			window.inputKey(key, int(scancode), Press, mods, window.platform.keyInputSource)
+			window.platform.keyInputSource = newInputSource()
+			window.inputKey(key, int(scancode), Release, mods, window.platform.keyInputSource)
 		} else {
-			window.inputKey(key, int(scancode), action, mods)
+			// TranslateMessage posts the WM_CHAR messages for this key
+			// message after it, so the source recorded here is the one those
+			// messages are attributed to. Each press and each OS repeat gets
+			// its own source.
+			window.platform.keyInputSource = newInputSource()
+			window.inputKey(key, int(scancode), action, mods, window.platform.keyInputSource)
 		}
 
 	case _WM_LBUTTONDOWN, _WM_RBUTTONDOWN, _WM_MBUTTONDOWN, _WM_XBUTTONDOWN, _WM_LBUTTONUP, _WM_RBUTTONUP, _WM_MBUTTONUP, _WM_XBUTTONUP:
@@ -2150,7 +2162,7 @@ func platformPollEvents() error {
 				if window.keys[key] != Press {
 					continue
 				}
-				window.inputKey(key, int(scancode), Release, getKeyMods())
+				window.inputKey(key, int(scancode), Release, getKeyMods(), newInputSource())
 			}
 		}
 	}

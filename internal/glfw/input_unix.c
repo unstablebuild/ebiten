@@ -21,9 +21,22 @@
 //////                         GLFW event API                       //////
 //////////////////////////////////////////////////////////////////////////
 
+// Allocates the next input source ID
+//
+// A source ID ties a key action to the code points the platform translated
+// from it. IDs are never reused, so a consumer can safely hold one across
+// updates while waiting for text that a platform delivers late.
+//
+unsigned long long _glfwNextInputSource(void)
+{
+    static unsigned long long next = 0;
+    return ++next;
+}
+
 // Notifies shared code of a physical key event
 //
-void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int mods)
+void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int mods,
+                   unsigned long long source)
 {
     if (key >= 0 && key <= GLFW_KEY_LAST)
     {
@@ -49,12 +62,16 @@ void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int m
 
     if (window->callbacks.key)
         window->callbacks.key((GLFWwindow*) window, key, scancode, action, mods);
+
+    if (window->callbacks.inputkey)
+        window->callbacks.inputkey((GLFWwindow*) window, key, scancode, action, mods, source);
 }
 
 // Notifies shared code of a Unicode codepoint input event
 // The 'plain' parameter determines whether to emit a regular character event
 //
-void _glfwInputChar(_GLFWwindow* window, uint32_t codepoint, int mods, GLFWbool plain)
+void _glfwInputChar(_GLFWwindow* window, uint32_t codepoint, int mods, GLFWbool plain,
+                    unsigned long long source)
 {
     if (codepoint < 32 || (codepoint > 126 && codepoint < 160))
         return;
@@ -64,6 +81,9 @@ void _glfwInputChar(_GLFWwindow* window, uint32_t codepoint, int mods, GLFWbool 
 
     if (window->callbacks.charmods)
         window->callbacks.charmods((GLFWwindow*) window, codepoint, mods);
+
+    if (window->callbacks.inputchar)
+        window->callbacks.inputchar((GLFWwindow*) window, codepoint, mods, plain, source);
 
     if (plain)
     {
@@ -544,6 +564,26 @@ GLFWAPI GLFWcharmodsfun glfwSetCharModsCallback(GLFWwindow* handle, GLFWcharmods
 
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
     _GLFW_SWAP_POINTERS(window->callbacks.charmods, cbfun);
+    return cbfun;
+}
+
+GLFWAPI GLFWinputkeyfun glfwSetInputKeyCallback(GLFWwindow* handle, GLFWinputkeyfun cbfun)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+    _GLFW_SWAP_POINTERS(window->callbacks.inputkey, cbfun);
+    return cbfun;
+}
+
+GLFWAPI GLFWinputcharfun glfwSetInputCharCallback(GLFWwindow* handle, GLFWinputcharfun cbfun)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+    _GLFW_SWAP_POINTERS(window->callbacks.inputchar, cbfun);
     return cbfun;
 }
 

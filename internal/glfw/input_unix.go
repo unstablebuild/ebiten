@@ -13,6 +13,8 @@ package glfw
 // void goKeyCB(void* window, int key, int  scancode, int action, int mods);
 // void goCharCB(void* window, unsigned int character);
 // void goCharModsCB(void* window, unsigned int character, int mods);
+// void goInputKeyCB(void* window, int key, int scancode, int action, int mods, unsigned long long source);
+// void goInputCharCB(void* window, unsigned int character, int mods, int plain, unsigned long long source);
 // void goMouseButtonCB(void* window, int button, int action, int mods);
 // void goCursorPosCB(void* window, double xpos, double ypos);
 // void goCursorEnterCB(void* window, int entered);
@@ -29,6 +31,14 @@ package glfw
 //
 // static void glfwSetCharModsCallbackCB(GLFWwindow *window) {
 //   glfwSetCharModsCallback(window, (GLFWcharmodsfun)goCharModsCB);
+// }
+//
+// static void glfwSetInputKeyCallbackCB(GLFWwindow *window) {
+//   glfwSetInputKeyCallback(window, (GLFWinputkeyfun)goInputKeyCB);
+// }
+//
+// static void glfwSetInputCharCallbackCB(GLFWwindow *window) {
+//   glfwSetInputCharCallback(window, (GLFWinputcharfun)goInputCharCB);
 // }
 //
 // static void glfwSetMouseButtonCallbackCB(GLFWwindow *window) {
@@ -103,6 +113,18 @@ func goCharCB(window unsafe.Pointer, character C.uint) {
 func goCharModsCB(window unsafe.Pointer, character C.uint, mods C.int) {
 	w := windows.get((*C.GLFWwindow)(window))
 	w.fCharModsHolder(w, rune(character), ModifierKey(mods))
+}
+
+//export goInputKeyCB
+func goInputKeyCB(window unsafe.Pointer, key, scancode, action, mods C.int, source C.ulonglong) {
+	w := windows.get((*C.GLFWwindow)(window))
+	w.fInputKeyHolder(w, Key(key), int(scancode), Action(action), ModifierKey(mods), InputSource(source))
+}
+
+//export goInputCharCB
+func goInputCharCB(window unsafe.Pointer, character C.uint, mods, plain C.int, source C.ulonglong) {
+	w := windows.get((*C.GLFWwindow)(window))
+	w.fInputCharHolder(w, rune(character), ModifierKey(mods), plain != 0, InputSource(source))
 }
 
 //export goDropCB
@@ -376,6 +398,39 @@ func (w *Window) SetCharModsCallback(cbfun CharModsCallback) (previous CharModsC
 		C.glfwSetCharModsCallback(w.data, nil)
 	} else {
 		C.glfwSetCharModsCallbackCB(w.data)
+	}
+	if err := fetchErrorIgnoringPlatformError(); err != nil {
+		return nil, err
+	}
+	return previous, nil
+}
+
+// SetInputKeyCallback sets the callback that reports key transitions together
+// with the source ID that ties them to the text they produce.
+func (w *Window) SetInputKeyCallback(cbfun InputKeyCallback) (previous InputKeyCallback, err error) {
+	previous = w.fInputKeyHolder
+	w.fInputKeyHolder = cbfun
+	if cbfun == nil {
+		C.glfwSetInputKeyCallback(w.data, nil)
+	} else {
+		C.glfwSetInputKeyCallbackCB(w.data)
+	}
+	if err := fetchErrorIgnoringPlatformError(); err != nil {
+		return nil, err
+	}
+	return previous, nil
+}
+
+// SetInputCharCallback sets the callback that reports every committed code
+// point together with its native modifiers, the platform's normal-text
+// classification and the source ID of the key action that produced it.
+func (w *Window) SetInputCharCallback(cbfun InputCharCallback) (previous InputCharCallback, err error) {
+	previous = w.fInputCharHolder
+	w.fInputCharHolder = cbfun
+	if cbfun == nil {
+		C.glfwSetInputCharCallback(w.data, nil)
+	} else {
+		C.glfwSetInputCharCallbackCB(w.data)
 	}
 	if err := fetchErrorIgnoringPlatformError(); err != nil {
 		return nil, err

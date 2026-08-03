@@ -35,6 +35,10 @@ type platformWindowState struct {
 
 	// The last received high surrogate when decoding pairs of UTF-16 messages
 	highSurrogate uint16
+
+	// The source ID of the key message that TranslateMessage last translated,
+	// so the WM_CHAR/WM_SYSCHAR messages it posted stay attributed to it.
+	keyInputSource InputSource
 }
 
 type platformMonitorState struct {

@@ -170,6 +170,10 @@ typedef struct _GLFWwindowX11
     // The time of the last KeyPress event per keycode, for discarding
     // duplicate key events generated for some keys by ibus
     Time            keyPressTimes[256];
+    // The input source ID reported for the last KeyPress event per keycode,
+    // so text delivered by a duplicate ibus event stays attributed to the
+    // key action that was actually reported
+    unsigned long long keyPressSources[256];
 } _GLFWwindowX11;
 
 // X11-specific global data

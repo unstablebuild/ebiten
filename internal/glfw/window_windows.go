@@ -23,7 +23,7 @@ func (w *Window) inputWindowFocus(focused bool) {
 		for key := Key(0); key <= KeyLast; key++ {
 			if w.keys[key] == Press {
 				scancode := platformGetKeyScancode(key)
-				w.inputKey(key, scancode, Release, 0)
+				w.inputKey(key, scancode, Release, 0, newInputSource())
 			}
 		}
 		for button := MouseButton(0); button <= MouseButtonLast; button++ {

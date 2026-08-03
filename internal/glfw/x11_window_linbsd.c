@@ -1292,6 +1292,7 @@ static void processEvent(XEvent *event)
             const int key = translateKey(keycode);
             const int mods = translateState(event->xkey.state);
             const int plain = !(mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT));
+            unsigned long long source = 0;
 
             if (window->x11.ic)
             {
@@ -1305,10 +1306,20 @@ static void processEvent(XEvent *event)
                 Time diff = event->xkey.time - window->x11.keyPressTimes[keycode];
                 if (diff == event->xkey.time || (diff > 0 && diff < ((Time)1 << 31)))
                 {
+                    source = _glfwNextInputSource();
+                    window->x11.keyPressSources[keycode] = source;
+
                     if (keycode)
-                        _glfwInputKey(window, key, keycode, GLFW_PRESS, mods);
+                        _glfwInputKey(window, key, keycode, GLFW_PRESS, mods, source);
 
                     window->x11.keyPressTimes[keycode] = event->xkey.time;
+                }
+                else
+                {
+                    // The key transition for this action was already reported;
+                    // keep its source so the text this duplicate carries stays
+                    // attributed to it.
+                    source = window->x11.keyPressSources[keycode];
                 }
 
                 if (!filtered)
@@ -1338,7 +1349,7 @@ static void processEvent(XEvent *event)
                         const char* c = chars;
                         chars[count] = '\0';
                         while (c - chars < count)
-                            _glfwInputChar(window, decodeUTF8(&c), mods, plain);
+                            _glfwInputChar(window, decodeUTF8(&c), mods, plain, source);
                     }
 #else /*X_HAVE_UTF8_STRING*/
                     wchar_t buffer[16];
@@ -1364,7 +1375,7 @@ static void processEvent(XEvent *event)
                     {
                         int i;
                         for (i = 0;  i < count;  i++)
-                            _glfwInputChar(window, chars[i], mods, plain);
+                            _glfwInputChar(window, chars[i], mods, plain, source);
                     }
 #endif /*X_HAVE_UTF8_STRING*/
 
@@ -1377,11 +1388,12 @@ static void processEvent(XEvent *event)
                 KeySym keysym;
                 XLookupString(&event->xkey, NULL, 0, &keysym, NULL);
 
-                _glfwInputKey(window, key, keycode, GLFW_PRESS, mods);
+                source = _glfwNextInputSource();
+                _glfwInputKey(window, key, keycode, GLFW_PRESS, mods, source);
 
                 const uint32_t codepoint = _glfwKeySym2Unicode(keysym);
                 if (codepoint != GLFW_INVALID_CODEPOINT)
-                    _glfwInputChar(window, codepoint, mods, plain);
+                    _glfwInputChar(window, codepoint, mods, plain, source);
             }
 
             return;
@@ -1424,7 +1436,7 @@ static void processEvent(XEvent *event)
                 }
             }
 
-            _glfwInputKey(window, key, keycode, GLFW_RELEASE, mods);
+            _glfwInputKey(window, key, keycode, GLFW_RELEASE, mods, _glfwNextInputSource());
             return;
         }
 

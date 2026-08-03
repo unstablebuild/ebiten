@@ -534,8 +534,9 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 {
     const int key = translateKey([event keyCode]);
     const int mods = translateFlags([event modifierFlags]);
+    const unsigned long long source = _glfwNextInputSource();
 
-    _glfwInputKey(window, key, [event keyCode], GLFW_PRESS, mods);
+    _glfwInputKey(window, key, [event keyCode], GLFW_PRESS, mods, source);
 
     // A Command-modified key never yields inserted text, so running it
     // through -interpretKeyEvents: only routes it to an unhandled action
@@ -543,7 +544,11 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     // reached GLFW via _glfwInputKey above, so skip text interpretation
     // for Command chords to suppress that beep.
     if (!([event modifierFlags] & NSEventModifierFlagCommand))
+    {
+        window->ns.keyInputSource = source;
         [self interpretKeyEvents:@[event]];
+        window->ns.keyInputSource = 0;
+    }
 }
 
 - (void)flagsChanged:(NSEvent *)event
@@ -565,14 +570,14 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     else
         action = GLFW_RELEASE;
 
-    _glfwInputKey(window, key, [event keyCode], action, mods);
+    _glfwInputKey(window, key, [event keyCode], action, mods, _glfwNextInputSource());
 }
 
 - (void)keyUp:(NSEvent *)event
 {
     const int key = translateKey([event keyCode]);
     const int mods = translateFlags([event modifierFlags]);
-    _glfwInputKey(window, key, [event keyCode], GLFW_RELEASE, mods);
+    _glfwInputKey(window, key, [event keyCode], GLFW_RELEASE, mods, _glfwNextInputSource());
 }
 
 - (void)scrollWheel:(NSEvent *)event
@@ -711,7 +716,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
             if (codepoint >= 0xf700 && codepoint <= 0xf7ff)
                 continue;
 
-            _glfwInputChar(window, codepoint, mods, plain);
+            _glfwInputChar(window, codepoint, mods, plain, window->ns.keyInputSource);
         }
     }
 }

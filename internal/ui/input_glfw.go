@@ -32,11 +32,11 @@ var glfwMouseButtonToMouseButton = map[glfw.MouseButton]MouseButton{
 }
 
 func (u *UserInterface) registerInputCallbacks() error {
-	if _, err := u.window.SetCharModsCallback(func(w *glfw.Window, char rune, mods glfw.ModifierKey) {
+	if _, err := u.window.SetInputCharCallback(func(w *glfw.Window, char rune, mods glfw.ModifierKey, normalText bool, source glfw.InputSource) {
 		// As this function is called from GLFW callbacks, the current thread is main.
 		u.m.Lock()
 		defer u.m.Unlock()
-		u.inputState.appendRune(char)
+		u.inputState.appendTextInput(char, KeyModifier(mods), normalText, InputSource(source))
 	}); err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (u *UserInterface) registerInputCallbacks() error {
 		return err
 	}
 
-	if _, err := u.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+	if _, err := u.window.SetInputKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey, source glfw.InputSource) {
 		// As this function is called from GLFW callbacks, the current thread is main.
 		u.m.Lock()
 		defer u.m.Unlock()
@@ -59,7 +59,7 @@ func (u *UserInterface) registerInputCallbacks() error {
 		if !ok {
 			return
 		}
-		u.inputState.appendKeyEvent(uiKey, KeyAction(action), KeyModifier(mods))
+		u.inputState.appendKeyEvent(uiKey, KeyAction(action), KeyModifier(mods), InputSource(source))
 	}); err != nil {
 		return err
 	}

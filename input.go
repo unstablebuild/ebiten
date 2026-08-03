@@ -57,6 +57,48 @@ type KeyEvent struct {
 	Mods   KeyModifier
 }
 
+// InputEventKind distinguishes the kinds of input observation reported by
+// the platform.
+type InputEventKind = ui.InputEventKind
+
+const (
+	// InputEventKindKey is a key transition (press, release or OS repeat).
+	InputEventKindKey InputEventKind = ui.InputEventKindKey
+	// InputEventKindText is a committed Unicode code point.
+	InputEventKindText InputEventKind = ui.InputEventKindText
+)
+
+// InputSource identifies the native key action that produced an input
+// observation. Zero means the source is unknown.
+type InputSource = ui.InputSource
+
+// InputEvent is a single input observation: either a key transition or a
+// committed Unicode code point.
+type InputEvent struct {
+	Kind InputEventKind
+
+	// Key, Action and Mods describe an InputEventKindKey observation.
+	Key    Key
+	Action KeyAction
+	Mods   KeyModifier
+
+	// Rune is the committed code point of an InputEventKindText
+	// observation; Mods carries the native modifier mask reported with it.
+	Rune rune
+
+	// NormalText is the platform's classification of the code point as
+	// ordinary typed text rather than the side effect of a shortcut. It is
+	// deliberately not derived from Mods, because text-producing layouts
+	// such as AltGr report normal text while Ctrl+Alt is held.
+	NormalText bool
+
+	// Source ties a code point to the key action that produced it. All
+	// observations of one physical action share a nonzero Source. Zero
+	// means the platform could not establish causality, as for a standalone
+	// IME commit.
+	Source InputSource
+}
+
 // AppendInputChars appends "printable" runes, read from the keyboard at the time Update is called, to runes,
 // and returns the extended buffer.
 // Giving a slice that already has enough capacity works efficiently.
@@ -67,6 +109,11 @@ type KeyEvent struct {
 // "Control" and modifier keys should be handled with IsKeyPressed.
 //
 // AppendInputChars is concurrent-safe.
+//
+// AppendInputChars is a projection of [AppendInputEvents] that keeps only
+// the text observations and drops their ordering relative to key events,
+// their modifiers and their source. Prefer [AppendInputEvents] when text
+// must be attributed to the key action that produced it.
 //
 // On Android (ebitenmobile), EbitenView must be focusable to enable to handle keyboard keys.
 func AppendInputChars(runes []rune) []rune {
@@ -83,9 +130,38 @@ func AppendInputChars(runes []rune) []rune {
 //
 // AppendKeyEvents is concurrent-safe.
 //
+// AppendKeyEvents is a projection of [AppendInputEvents] that keeps only the
+// key observations and drops their ordering relative to committed text.
+// Prefer [AppendInputEvents] when a key action must be reconciled with the
+// text it produced.
+//
 // On Android (ebitenmobile), EbitenView must be focusable to enable to handle keyboard keys.
 func AppendKeyEvents(events []KeyEvent) []KeyEvent {
 	return theInputState.appendKeyEvents(events)
+}
+
+// AppendInputEvents appends every input observation that occurred since the
+// last Update to events, in the order the platform reported them, and
+// returns the extended buffer.
+// Giving a slice that already has enough capacity works efficiently.
+//
+// Key transitions and committed text are related observations, not disjoint
+// streams. A single physical action reports one key transition and zero, one
+// or many code points, and the platform may deliver those code points in a
+// later update than the key transition. InputEvent.Source expresses the
+// causality the platform actually knows: every observation of one key action
+// shares a nonzero source, and zero means the source is unknown, as for a
+// standalone IME commit.
+//
+// Consumers deciding whether a code point belongs to a key action they
+// already handled must compare InputEvent.Source. Inferring the association
+// from rune equality, from the modifier mask alone, or from membership in
+// the same update is incorrect: it drops unrelated text, AltGr and
+// international-layout input, dead-key and IME commits, and repeats.
+//
+// AppendInputEvents is concurrent-safe.
+func AppendInputEvents(events []InputEvent) []InputEvent {
+	return theInputState.appendInputEvents(events)
 }
 
 // InputChars return "printable" runes read from the keyboard at the time Update is called.
@@ -447,17 +523,43 @@ func (i *inputState) update(fn func(*ui.InputState)) {
 func (i *inputState) appendInputChars(runes []rune) []rune {
 	i.m.Lock()
 	defer i.m.Unlock()
-	return append(runes, i.state.Runes...)
+	for _, ie := range i.state.InputEvents {
+		if ie.Kind != ui.InputEventKindText {
+			continue
+		}
+		runes = append(runes, ie.Rune)
+	}
+	return runes
 }
 
 func (i *inputState) appendKeyEvents(events []KeyEvent) []KeyEvent {
 	i.m.Lock()
 	defer i.m.Unlock()
-	for _, ke := range i.state.KeyEvents {
+	for _, ie := range i.state.InputEvents {
+		if ie.Kind != ui.InputEventKindKey {
+			continue
+		}
 		events = append(events, KeyEvent{
-			Key:    Key(ke.Key),
-			Action: KeyAction(ke.Action),
-			Mods:   KeyModifier(ke.Mods),
+			Key:    Key(ie.Key),
+			Action: ie.Action,
+			Mods:   ie.Mods,
+		})
+	}
+	return events
+}
+
+func (i *inputState) appendInputEvents(events []InputEvent) []InputEvent {
+	i.m.Lock()
+	defer i.m.Unlock()
+	for _, ie := range i.state.InputEvents {
+		events = append(events, InputEvent{
+			Kind:       ie.Kind,
+			Key:        Key(ie.Key),
+			Action:     ie.Action,
+			Mods:       ie.Mods,
+			Rune:       ie.Rune,
+			NormalText: ie.NormalText,
+			Source:     ie.Source,
 		})
 	}
 	return events

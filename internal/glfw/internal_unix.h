@@ -318,6 +318,8 @@ struct _GLFWwindow
         GLFWkeyfun                key;
         GLFWcharfun               character;
         GLFWcharmodsfun           charmods;
+        GLFWinputkeyfun           inputkey;
+        GLFWinputcharfun          inputchar;
         GLFWdropfun               drop;
     } callbacks;
 
@@ -541,9 +543,12 @@ void _glfwInputWindowCloseRequest(_GLFWwindow* window);
 void _glfwInputWindowMonitor(_GLFWwindow* window, _GLFWmonitor* monitor);
 
 void _glfwInputKey(_GLFWwindow* window,
-                   int key, int scancode, int action, int mods);
+                   int key, int scancode, int action, int mods,
+                   unsigned long long source);
 void _glfwInputChar(_GLFWwindow* window,
-                    uint32_t codepoint, int mods, GLFWbool plain);
+                    uint32_t codepoint, int mods, GLFWbool plain,
+                    unsigned long long source);
+unsigned long long _glfwNextInputSource(void);
 void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset);
 void _glfwInputMouseClick(_GLFWwindow* window, int button, int action, int mods);
 void _glfwInputCursorPos(_GLFWwindow* window, double xpos, double ypos);

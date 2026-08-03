@@ -1428,6 +1428,31 @@ typedef void (* GLFWcharfun)(GLFWwindow* window, unsigned int codepoint);
  */
 typedef void (* GLFWcharmodsfun)(GLFWwindow* window, unsigned int codepoint, int mods);
 
+/*! @brief The function pointer type for input key callbacks.
+ *
+ *  Like @ref GLFWkeyfun, but the callback also receives the source ID of the
+ *  key action.  Every code point the platform translated from this action is
+ *  reported to the @ref GLFWinputcharfun with the same nonzero source ID, so
+ *  a consumer that claims the key transition can identify exactly the text it
+ *  must not process again.  A source ID of zero means the platform could not
+ *  establish causality for this action.
+ *
+ *  @ingroup input
+ */
+typedef void (* GLFWinputkeyfun)(GLFWwindow* window, int key, int scancode, int action, int mods, unsigned long long source);
+
+/*! @brief The function pointer type for input character callbacks.
+ *
+ *  Like @ref GLFWcharmodsfun, but the callback also receives the platform's
+ *  own classification of the code point as normal text (@p plain) and the
+ *  source ID of the key action that produced it.  A source ID of zero means
+ *  the code point has no associated key action, as for a standalone input
+ *  method commit.
+ *
+ *  @ingroup input
+ */
+typedef void (* GLFWinputcharfun)(GLFWwindow* window, unsigned int codepoint, int mods, int plain, unsigned long long source);
+
 /*! @brief The function pointer type for path drop callbacks.
  *
  *  This is the function pointer type for path drop callbacks.  A path drop
@@ -4477,6 +4502,43 @@ GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* window, GLFWcharfun callback
  *  @ingroup input
  */
 GLFWAPI GLFWcharmodsfun glfwSetCharModsCallback(GLFWwindow* window, GLFWcharmodsfun callback);
+
+/*! @brief Sets the input key callback.
+ *
+ *  This function sets the input key callback of the specified window.  It is
+ *  called for the same key transitions as the [key callback](@ref
+ *  glfwSetKeyCallback) and additionally reports the source ID that ties the
+ *  transition to the text it produces.
+ *
+ *  @param[in] window The window whose callback to set.
+ *  @param[in] callback The new callback, or `NULL` to remove the currently set
+ *  callback.
+ *  @return The previously set callback, or `NULL` if no callback was set.
+ *
+ *  @thread_safety This function must only be called from the main thread.
+ *
+ *  @ingroup input
+ */
+GLFWAPI GLFWinputkeyfun glfwSetInputKeyCallback(GLFWwindow* window, GLFWinputkeyfun callback);
+
+/*! @brief Sets the input character callback.
+ *
+ *  This function sets the input character callback of the specified window.
+ *  It is called for every code point the platform commits, including those
+ *  the [character callback](@ref glfwSetCharCallback) suppresses because the
+ *  platform did not classify them as normal text, and it reports the source
+ *  ID of the key action that produced each code point.
+ *
+ *  @param[in] window The window whose callback to set.
+ *  @param[in] callback The new callback, or `NULL` to remove the currently set
+ *  callback.
+ *  @return The previously set callback, or `NULL` if no callback was set.
+ *
+ *  @thread_safety This function must only be called from the main thread.
+ *
+ *  @ingroup input
+ */
+GLFWAPI GLFWinputcharfun glfwSetInputCharCallback(GLFWwindow* window, GLFWinputcharfun callback);
 
 /*! @brief Sets the mouse button callback.
  *

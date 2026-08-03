@@ -167,6 +167,8 @@ type Window struct {
 		key         KeyCallback
 		character   CharCallback
 		charmods    CharModsCallback
+		inputkey    InputKeyCallback
+		inputchar   InputCharCallback
 		drop        DropCallback
 	}
 
