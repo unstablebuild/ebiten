@@ -321,6 +321,7 @@ struct _GLFWwindow
         GLFWinputkeyfun           inputkey;
         GLFWinputcharfun          inputchar;
         GLFWdropfun               drop;
+        GLFWdragfun               drag;
     } callbacks;
 
     // This is defined in the window API's platform.h
@@ -554,6 +555,7 @@ void _glfwInputMouseClick(_GLFWwindow* window, int button, int action, int mods)
 void _glfwInputCursorPos(_GLFWwindow* window, double xpos, double ypos);
 void _glfwInputCursorEnter(_GLFWwindow* window, GLFWbool entered);
 void _glfwInputDrop(_GLFWwindow* window, int count, const char** names);
+void _glfwInputDrag(_GLFWwindow* window, GLFWbool entered, double xpos, double ypos);
 
 void _glfwInputMonitor(_GLFWmonitor* monitor, int action, int placement);
 void _glfwInputMonitorWindow(_GLFWmonitor* monitor, _GLFWwindow* window);

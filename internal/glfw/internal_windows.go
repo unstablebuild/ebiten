@@ -113,6 +113,7 @@ type (
 	CharCallback            func(w *Window, char rune)
 	CharModsCallback        func(w *Window, char rune, mods ModifierKey)
 	DropCallback            func(w *Window, names []string)
+	DragCallback            func(w *Window, entered bool, xpos float64, ypos float64)
 	MonitorCallback         func(monitor *Monitor, event PeripheralEvent)
 )
 
@@ -170,6 +171,7 @@ type Window struct {
 		inputkey    InputKeyCallback
 		inputchar   InputCharCallback
 		drop        DropCallback
+		drag        DragCallback
 	}
 
 	platform platformWindowState

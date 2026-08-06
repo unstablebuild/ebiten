@@ -116,6 +116,7 @@ type Window struct {
 	fInputKeyHolder    func(w *Window, key Key, scancode int, action Action, mods ModifierKey, source InputSource)
 	fInputCharHolder   func(w *Window, char rune, mods ModifierKey, normalText bool, source InputSource)
 	fDropHolder        func(w *Window, names []string)
+	fDragHolder        func(w *Window, entered bool, xpos, ypos float64)
 }
 
 // Handle returns a *C.GLFWwindow reference (i.e. the GLFW window itself).

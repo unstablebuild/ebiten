@@ -597,9 +597,47 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
 
 - (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender
 {
-    // HACK: We don't know what to say here because we don't know what the
-    //       application wants to do with the paths
-    return NSDragOperationGeneric;
+    return [self acceptDrag:sender];
+}
+
+- (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender
+{
+    return [self acceptDrag:sender];
+}
+
+- (void)draggingExited:(id <NSDraggingInfo>)sender
+{
+    [self reportDrag:sender entered:GLFW_FALSE];
+}
+
+// acceptDrag reports the drag to the application and answers the drag
+// operation shown to the user. Only file paths survive
+// performDragOperation, so a drag carrying anything else is refused
+// rather than previewed as a drop the application never receives.
+- (NSDragOperation)acceptDrag:(id <NSDraggingInfo>)sender
+{
+    NSDictionary* options = @{NSPasteboardURLReadingFileURLsOnlyKey:@YES};
+    if (![[sender draggingPasteboard] canReadObjectForClasses:@[[NSURL class]]
+                                                      options:options])
+    {
+        [self reportDrag:sender entered:GLFW_FALSE];
+        return NSDragOperationNone;
+    }
+
+    [self reportDrag:sender entered:GLFW_TRUE];
+    // The paths are copied to the application, which never takes
+    // ownership of the dragged files.
+    return NSDragOperationCopy;
+}
+
+// reportDrag forwards the drag position in content-view coordinates so the
+// application can preview which part of the window would receive the drop.
+- (void)reportDrag:(id <NSDraggingInfo>)sender entered:(GLFWbool)entered
+{
+    const NSRect contentRect = [window->ns.view frame];
+    // NOTE: The returned location uses base 0,1 not 0,0
+    const NSPoint pos = [sender draggingLocation];
+    _glfwInputDrag(window, entered, pos.x, contentRect.size.height - pos.y);
 }
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
@@ -608,6 +646,9 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
     // NOTE: The returned location uses base 0,1 not 0,0
     const NSPoint pos = [sender draggingLocation];
     _glfwInputCursorPos(window, pos.x, contentRect.size.height - pos.y);
+    // The drag is over: let the application drop any drop-target preview
+    // before the paths are delivered.
+    _glfwInputDrag(window, GLFW_FALSE, pos.x, contentRect.size.height - pos.y);
 
     NSPasteboard* pasteboard = [sender draggingPasteboard];
     NSDictionary* options = @{NSPasteboardURLReadingFileURLsOnlyKey:@YES};

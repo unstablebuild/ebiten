@@ -723,3 +723,30 @@ func toUIRunOptions(options *RunGameOptions) *ui.RunOptions {
 func DroppedFiles() fs.FS {
 	return theInputState.droppedFiles()
 }
+
+// DroppedFilePaths returns the real paths of the files and/or directories
+// dropped on the window at the time Update is called. It returns nil when
+// nothing was dropped in this tick, or when the platform does not report
+// real paths.
+//
+// DroppedFilePaths works on desktops.
+//
+// DroppedFilePaths is concurrent-safe.
+func DroppedFilePaths() []string {
+	return theInputState.droppedFilePaths()
+}
+
+// DraggingPosition returns the cursor position of files being dragged over
+// the window and whether such a drag is in progress at the time Update is
+// called. It lets an application preview the drop target before the files
+// are released. The position is 'logical' and considers the scale of the
+// screen, like CursorPosition, and keeps the release position after the
+// drag ends, so it also locates the files reported by DroppedFilePaths.
+//
+// DraggingPosition works on desktops.
+//
+// DraggingPosition is concurrent-safe.
+func DraggingPosition() (x, y int, ok bool) {
+	dx, dy, dragging := theInputState.dragging()
+	return int(dx), int(dy), dragging
+}

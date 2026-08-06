@@ -119,6 +119,14 @@ type InputState struct {
 	InputEvents        []InputEvent
 	WindowBeingClosed  bool
 	DroppedFiles       fs.FS
+	// DroppedFilePaths are the real paths of the files dropped on the
+	// window, when the platform reports them.
+	DroppedFilePaths []string
+	// DragX and DragY are the cursor position of an in-progress drag of
+	// files over the window, in the same logical coordinates as CursorX
+	// and CursorY. They hold the release position once Dragging is false.
+	DragX, DragY float64
+	Dragging     bool
 }
 
 func (i *InputState) copyAndReset(dst *InputState) {
@@ -132,6 +140,10 @@ func (i *InputState) copyAndReset(dst *InputState) {
 	dst.InputEvents = append(dst.InputEvents[:0], i.InputEvents...)
 	dst.WindowBeingClosed = i.WindowBeingClosed
 	dst.DroppedFiles = i.DroppedFiles
+	dst.DroppedFilePaths = i.DroppedFilePaths
+	dst.DragX = i.DragX
+	dst.DragY = i.DragY
+	dst.Dragging = i.Dragging
 
 	// Reset the members that are updated by deltas, rather than absolute values.
 	i.WheelX = 0
@@ -141,6 +153,7 @@ func (i *InputState) copyAndReset(dst *InputState) {
 	// Reset the members that are never reset until they are explicitly done.
 	i.WindowBeingClosed = false
 	i.DroppedFiles = nil
+	i.DroppedFilePaths = nil
 }
 
 // appendRune records text that has no known originating key action, such as

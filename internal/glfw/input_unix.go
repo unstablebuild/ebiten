@@ -20,6 +20,7 @@ package glfw
 // void goCursorEnterCB(void* window, int entered);
 // void goScrollCB(void* window, double xoff, double yoff);
 // void goDropCB(void* window, int count, char** names);
+// void goDragCB(void* window, int entered, double xpos, double ypos);
 //
 // static void glfwSetKeyCallbackCB(GLFWwindow *window) {
 //   glfwSetKeyCallback(window, (GLFWkeyfun)goKeyCB);
@@ -59,6 +60,10 @@ package glfw
 //
 // static void glfwSetDropCallbackCB(GLFWwindow *window) {
 //   glfwSetDropCallback(window, (GLFWdropfun)goDropCB);
+// }
+//
+// static void glfwSetDragCallbackCB(GLFWwindow *window) {
+//   glfwSetDragCallback(window, (GLFWdragfun)goDragCB);
 // }
 import "C"
 
@@ -137,6 +142,12 @@ func goDropCB(window unsafe.Pointer, count C.int, names **C.char) { // TODO: The
 		namesSlice[i] = C.GoString(*p)                                                                // TODO: Make this better.
 	}
 	w.fDropHolder(w, namesSlice)
+}
+
+//export goDragCB
+func goDragCB(window unsafe.Pointer, entered C.int, xpos, ypos C.double) {
+	w := windows.get((*C.GLFWwindow)(window))
+	w.fDragHolder(w, entered != 0, float64(xpos), float64(ypos))
 }
 
 // GetInputMode returns the value of an input option of the window.
@@ -533,6 +544,25 @@ func (w *Window) SetDropCallback(cbfun DropCallback) (previous DropCallback, err
 		C.glfwSetDropCallback(w.data, nil)
 	} else {
 		C.glfwSetDropCallbackCB(w.data)
+	}
+	if err := fetchErrorIgnoringPlatformError(); err != nil {
+		return nil, err
+	}
+	return previous, nil
+}
+
+// DragCallback is the drag callback.
+type DragCallback func(w *Window, entered bool, xpos, ypos float64)
+
+// SetDragCallback sets the drag callback which is called while an object is
+// dragged over the window, and when it leaves the window or is released.
+func (w *Window) SetDragCallback(cbfun DragCallback) (previous DragCallback, err error) {
+	previous = w.fDragHolder
+	w.fDragHolder = cbfun
+	if cbfun == nil {
+		C.glfwSetDragCallback(w.data, nil)
+	} else {
+		C.glfwSetDragCallbackCB(w.data)
 	}
 	if err := fetchErrorIgnoringPlatformError(); err != nil {
 		return nil, err

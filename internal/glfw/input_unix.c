@@ -150,6 +150,14 @@ void _glfwInputDrop(_GLFWwindow* window, int count, const char** paths)
         window->callbacks.drop((GLFWwindow*) window, count, paths);
 }
 
+// Notifies shared code of paths dragged over a window
+//
+void _glfwInputDrag(_GLFWwindow* window, GLFWbool entered, double xpos, double ypos)
+{
+    if (window->callbacks.drag)
+        window->callbacks.drag((GLFWwindow*) window, entered, xpos, ypos);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
@@ -638,6 +646,16 @@ GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* handle, GLFWdropfun cbfun)
 
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
     _GLFW_SWAP_POINTERS(window->callbacks.drop, cbfun);
+    return cbfun;
+}
+
+GLFWAPI GLFWdragfun glfwSetDragCallback(GLFWwindow* handle, GLFWdragfun cbfun)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+    _GLFW_SWAP_POINTERS(window->callbacks.drag, cbfun);
     return cbfun;
 }
 

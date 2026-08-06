@@ -121,6 +121,16 @@ func (u *UserInterface) updateInputStateImpl() error {
 		u.inputState.CursorX, u.inputState.CursorY = cx, cy
 	}
 
+	// The drag position arrives in client coordinates, like the cursor
+	// position, and must go through the same conversion so that both
+	// describe the same point on the screen.
+	dx, dy := u.context.clientPositionToLogicalPosition(
+		dipFromGLFWPixel(u.dragX, s), dipFromGLFWPixel(u.dragY, s), s)
+	if !math.IsNaN(dx) && !math.IsNaN(dy) {
+		u.inputState.DragX, u.inputState.DragY = dx, dy
+	}
+	u.inputState.Dragging = u.dragging
+
 	if err := gamepad.Update(); err != nil {
 		return err
 	}

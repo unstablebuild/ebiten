@@ -97,11 +97,19 @@ type userInterfaceImpl struct {
 	savedCursorX float64
 	savedCursorY float64
 
+	// dragX and dragY are the drag position as reported by GLFW, in
+	// client coordinates. updateInputStateImpl converts them to the
+	// logical position exposed by InputState.
+	dragX    float64
+	dragY    float64
+	dragging bool
+
 	sizeCallback                   glfw.SizeCallback
 	closeCallback                  glfw.CloseCallback
 	framebufferSizeCallback        glfw.FramebufferSizeCallback
 	defaultFramebufferSizeCallback glfw.FramebufferSizeCallback
 	dropCallback                   glfw.DropCallback
+	dragCallback                   glfw.DragCallback
 	framebufferSizeCallbackCh      chan struct{}
 
 	darwinInitOnce        sync.Once
@@ -775,9 +783,27 @@ func (u *UserInterface) registerDropCallback() error {
 			u.m.Lock()
 			defer u.m.Unlock()
 			u.inputState.DroppedFiles = file.NewVirtualFS(names)
+			u.inputState.DroppedFilePaths = append(
+				u.inputState.DroppedFilePaths[:0], names...)
 		}
 	}
 	if _, err := u.window.SetDropCallback(u.dropCallback); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserInterface) registerDragCallback() error {
+	if u.dragCallback == nil {
+		u.dragCallback = func(_ *glfw.Window, entered bool, xpos, ypos float64) {
+			u.m.Lock()
+			defer u.m.Unlock()
+			u.dragging = entered
+			u.dragX = xpos
+			u.dragY = ypos
+		}
+	}
+	if _, err := u.window.SetDragCallback(u.dragCallback); err != nil {
 		return err
 	}
 	return nil
@@ -979,6 +1005,9 @@ func (u *UserInterface) initOnMainThread(options *RunOptions) error {
 		return err
 	}
 	if err := u.registerDropCallback(); err != nil {
+		return err
+	}
+	if err := u.registerDragCallback(); err != nil {
 		return err
 	}
 

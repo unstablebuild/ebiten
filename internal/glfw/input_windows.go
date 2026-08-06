@@ -523,6 +523,17 @@ func (w *Window) SetDropCallback(cbfun DropCallback) (DropCallback, error) {
 	return old, nil
 }
 
+// SetDragCallback registers a drag callback. This platform does not report
+// drag-over events yet, so the callback is stored but never invoked.
+func (w *Window) SetDragCallback(cbfun DragCallback) (DragCallback, error) {
+	if !_glfw.initialized {
+		return nil, NotInitialized
+	}
+	old := w.callbacks.drag
+	w.callbacks.drag = cbfun
+	return old, nil
+}
+
 func (w *Window) SetClipboardString(str string) error {
 	if !_glfw.initialized {
 		return NotInitialized

@@ -1477,6 +1477,29 @@ typedef void (* GLFWinputcharfun)(GLFWwindow* window, unsigned int codepoint, in
  */
 typedef void (* GLFWdropfun)(GLFWwindow* window, int path_count, const char* paths[]);
 
+/*! @brief The function pointer type for drag callbacks.
+ *
+ *  This is the function pointer type for drag callbacks, called while paths
+ *  are dragged over a window but before they are dropped.  A drag callback
+ *  function has the following signature:
+ *  @code
+ *  void function_name(GLFWwindow* window, int entered, double xpos, double ypos)
+ *  @endcode
+ *
+ *  @param[in] window The window that received the event.
+ *  @param[in] entered `GLFW_TRUE` while the drag is over the window,
+ *  `GLFW_FALSE` when it leaves or is released.
+ *  @param[in] xpos The cursor x-coordinate, relative to the left edge of the
+ *  content area.
+ *  @param[in] ypos The cursor y-coordinate, relative to the top edge of the
+ *  content area.
+ *
+ *  @sa @ref glfwSetDragCallback
+ *
+ *  @ingroup input
+ */
+typedef void (* GLFWdragfun)(GLFWwindow* window, int entered, double xpos, double ypos);
+
 /*! @brief The function pointer type for monitor configuration callbacks.
  *
  *  This is the function pointer type for monitor configuration callbacks.
@@ -4710,6 +4733,23 @@ GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* window, GLFWscrollfun ca
  *  @ingroup input
  */
 GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* window, GLFWdropfun callback);
+
+/*! @brief Sets the drag callback.
+ *
+ *  This function sets the drag callback, which is called while paths are
+ *  dragged over the window and when such a drag leaves it or is released.
+ *  It lets an application preview the drop target before the paths are
+ *  delivered by the drop callback.
+ *
+ *  @param[in] window The window whose callback to set.
+ *  @param[in] callback The new file drag callback, or `NULL` to remove the
+ *  currently set callback.
+ *  @return The previously set callback, or `NULL` if no callback was set or
+ *  the library had not been [initialized](@ref intro_init).
+ *
+ *  @ingroup input
+ */
+GLFWAPI GLFWdragfun glfwSetDragCallback(GLFWwindow* window, GLFWdragfun callback);
 
 /*! @brief Sets the clipboard to the specified string.
  *

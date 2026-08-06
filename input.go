@@ -16,6 +16,7 @@ package ebiten
 
 import (
 	"io/fs"
+	"slices"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2/internal/gamepad"
@@ -638,4 +639,19 @@ func (i *inputState) droppedFiles() fs.FS {
 	i.m.Lock()
 	defer i.m.Unlock()
 	return i.state.DroppedFiles
+}
+
+func (i *inputState) droppedFilePaths() []string {
+	i.m.Lock()
+	defer i.m.Unlock()
+	if len(i.state.DroppedFilePaths) == 0 {
+		return nil
+	}
+	return slices.Clone(i.state.DroppedFilePaths)
+}
+
+func (i *inputState) dragging() (float64, float64, bool) {
+	i.m.Lock()
+	defer i.m.Unlock()
+	return i.state.DragX, i.state.DragY, i.state.Dragging
 }
