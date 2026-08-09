@@ -807,8 +807,8 @@ func (u *UserInterface) AppendMonitors(mons []*Monitor) []*Monitor {
 	return append(mons, theMonitor)
 }
 
-func (u *UserInterface) Monitor() *Monitor {
-	return theMonitor
+func (u *UserInterface) Monitor() (*Monitor, bool) {
+	return theMonitor, true
 }
 
 func (u *UserInterface) updateIconIfNeeded() error {

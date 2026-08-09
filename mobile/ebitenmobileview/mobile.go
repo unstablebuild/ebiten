@@ -113,7 +113,11 @@ func Resume() error {
 }
 
 func DeviceScale() float64 {
-	return ui.Get().Monitor().DeviceScaleFactor()
+	m, ok := ui.Get().Monitor()
+	if !ok {
+		return 1
+	}
+	return m.DeviceScaleFactor()
 }
 
 type RenderRequester interface {
