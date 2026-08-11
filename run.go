@@ -506,15 +506,11 @@ func SetVsyncEnabled(enabled bool) {
 }
 
 // FPSModeType is a type of FPS modes.
-//
-// Deprecated: as of v2.5. Use SetVsyncEnabled instead.
 type FPSModeType = ui.FPSModeType
 
 const (
 	// FPSModeVsyncOn indicates that the game tries to sync the display's refresh rate.
 	// FPSModeVsyncOn is the default mode.
-	//
-	// Deprecated: as of v2.5. Use SetVsyncEnabled(true) instead.
 	FPSModeVsyncOn FPSModeType = ui.FPSModeVsyncOn
 
 	// FPSModeVsyncOffMaximum indicates that the game doesn't sync with vsync, and
@@ -524,8 +520,6 @@ const (
 	//
 	// In FPSModeVsyncOffMaximum, the game's Draw is called almost without sleeping.
 	// The game's Update is called based on the specified TPS.
-	//
-	// Deprecated: as of v2.5. Use SetVsyncEnabled(false) instead.
 	FPSModeVsyncOffMaximum FPSModeType = ui.FPSModeVsyncOffMaximum
 
 	// FPSModeVsyncOffMinimum indicates that the game doesn't sync with vsync, and
@@ -535,18 +529,14 @@ const (
 	//
 	// In FPSModeVsyncOffMinimum, the game's Update and Draw are called only when
 	// 1) new inputting except for gamepads is detected, or 2) ScheduleFrame is called.
-	// In FPSModeVsyncOffMinimum, TPS is SyncWithFPS no matter what TPS is specified at SetTPS.
-	//
-	// Deprecated: as of v2.5. Use SetScreenClearedEveryFrame(false) instead.
-	// See examples/skipdraw for GPU optimization with SetScreenClearedEveryFrame(false).
+	// In FPSModeVsyncOffMinimum, every frame delivers at least one Update
+	// regardless of the configured TPS, so the waking input is never skipped.
 	FPSModeVsyncOffMinimum FPSModeType = ui.FPSModeVsyncOffMinimum
 )
 
 // FPSMode returns the current FPS mode.
 //
 // FPSMode is concurrent-safe.
-//
-// Deprecated: as of v2.5. Use SetVsyncEnabled instead.
 func FPSMode() FPSModeType {
 	return ui.Get().FPSMode()
 }
@@ -555,8 +545,6 @@ func FPSMode() FPSModeType {
 // The default FPS mode is FPSModeVsyncOn.
 //
 // SetFPSMode is concurrent-safe.
-//
-// Deprecated: as of v2.5. Use SetVsyncEnabled instead.
 func SetFPSMode(mode FPSModeType) {
 	ui.Get().SetFPSMode(mode)
 }
@@ -564,9 +552,6 @@ func SetFPSMode(mode FPSModeType) {
 // ScheduleFrame schedules a next frame when the current FPS mode is FPSModeVsyncOffMinimum.
 //
 // ScheduleFrame is concurrent-safe.
-//
-// Deprecated: as of v2.5. Use SetScreenClearedEveryFrame(false) instead.
-// See examples/skipdraw for GPU optimization with SetScreenClearedEveryFrame(false).
 func ScheduleFrame() {
 	ui.Get().ScheduleFrame()
 }

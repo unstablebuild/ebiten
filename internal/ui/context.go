@@ -70,7 +70,17 @@ func newContext(game Game) *context {
 
 func (c *context) updateFrame(graphicsDriver graphicsdriver.Graphics, outsideWidth, outsideHeight float64, deviceScaleFactor float64, ui *UserInterface) error {
 	// TODO: If updateCount is 0 and vsync is disabled, swapping buffers can be skipped.
-	return c.updateFrameImpl(graphicsDriver, clock.UpdateFrame(), outsideWidth, outsideHeight, deviceScaleFactor, ui, false)
+	updateCount := clock.UpdateFrame()
+	// In FPSModeVsyncOffMinimum a frame only runs when an input event or
+	// ScheduleFrame arrives, so every frame must deliver at least one
+	// update. With a finite TPS the clock returns 0 for wakes closer than
+	// half a tick period to the previous frame, which would skip Update,
+	// draw stale state, and leave the waking input invisible until the
+	// next event arrives.
+	if updateCount == 0 && ui.FPSMode() == FPSModeVsyncOffMinimum {
+		updateCount = 1
+	}
+	return c.updateFrameImpl(graphicsDriver, updateCount, outsideWidth, outsideHeight, deviceScaleFactor, ui, false)
 }
 
 func (c *context) forceUpdateFrame(graphicsDriver graphicsdriver.Graphics, outsideWidth, outsideHeight float64, deviceScaleFactor float64, ui *UserInterface) error {
