@@ -51,6 +51,38 @@ func (m *MonitorType) Size() (int, int) {
 	return (*ui.Monitor)(m).Size()
 }
 
+// RefreshRate returns the refresh rate of the monitor's current video
+// mode in Hz, or 0 when the platform does not expose it (browsers,
+// mobiles, and consoles) or it is unknown.
+//
+// On displays with a variable refresh rate, RefreshRate reports the
+// rate of the current video mode, which is typically the maximum rate.
+func (m *MonitorType) RefreshRate() int {
+	return (*ui.Monitor)(m).RefreshRate()
+}
+
+// SetMonitorChangedCallback sets a function invoked when the monitor
+// the window is on changes, either because the window moved onto a
+// different monitor or because the system's monitor configuration
+// changed (a monitor was connected or disconnected, or changed video
+// mode). The monitor argument may be nil when it cannot be determined.
+//
+// The callback is invoked on the main thread during event processing;
+// it must not block and must not call functions that dispatch to the
+// main thread. Passing nil removes the callback.
+//
+// SetMonitorChangedCallback is concurrent-safe. On browsers, mobiles,
+// and consoles the callback is never invoked.
+func SetMonitorChangedCallback(f func(monitor *MonitorType)) {
+	if f == nil {
+		ui.Get().SetMonitorChangedCallback(nil)
+		return
+	}
+	ui.Get().SetMonitorChangedCallback(func(m *ui.Monitor) {
+		f((*MonitorType)(m))
+	})
+}
+
 // Monitor returns the current monitor.
 func Monitor() *MonitorType {
 	m, ok := ui.Get().Monitor()

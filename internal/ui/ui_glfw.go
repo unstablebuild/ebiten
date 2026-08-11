@@ -111,6 +111,12 @@ type userInterfaceImpl struct {
 	dropCallback                   glfw.DropCallback
 	dragCallback                   glfw.DragCallback
 	framebufferSizeCallbackCh      chan struct{}
+	posCallback                    glfw.PosCallback
+
+	// monitorChangedCallback is guarded by m. lastMonitorID is only
+	// touched on the main thread from GLFW callbacks.
+	monitorChangedCallback func(*Monitor)
+	lastMonitorID          int
 
 	darwinInitOnce        sync.Once
 	showWindowOnce        sync.Once
@@ -153,6 +159,7 @@ func (u *UserInterface) init() error {
 		origWindowPosY:           invalidPos,
 		savedCursorX:             math.NaN(),
 		savedCursorY:             math.NaN(),
+		lastMonitorID:            -1,
 	}
 	u.iwindow.ui = u
 
@@ -165,7 +172,9 @@ func (u *UserInterface) init() error {
 	if _, err := glfw.SetMonitorCallback(func(monitor *glfw.Monitor, event glfw.PeripheralEvent) {
 		if err := theMonitors.update(); err != nil {
 			u.setError(err)
+			return
 		}
+		u.notifyMonitorChanged()
 	}); err != nil {
 		return err
 	}
@@ -793,6 +802,63 @@ func (u *UserInterface) registerDropCallback() error {
 	return nil
 }
 
+// SetMonitorChangedCallback sets a function invoked when the monitor
+// the window is on changes, or when the system's monitor configuration
+// changes. It is concurrent-safe; the callback runs on the main thread.
+func (u *UserInterface) SetMonitorChangedCallback(f func(*Monitor)) {
+	u.m.Lock()
+	defer u.m.Unlock()
+	u.monitorChangedCallback = f
+}
+
+// notifyMonitorChanged re-resolves the window's monitor and invokes the
+// monitor-changed callback. It must be called on the main thread.
+func (u *UserInterface) notifyMonitorChanged() {
+	u.m.RLock()
+	f := u.monitorChangedCallback
+	u.m.RUnlock()
+	if f == nil {
+		return
+	}
+	m, ok, err := u.currentMonitor()
+	if err != nil {
+		u.setError(err)
+		return
+	}
+	if !ok {
+		m = nil
+	}
+	if m != nil {
+		u.lastMonitorID = m.id
+	}
+	f(m)
+}
+
+// registerWindowPosCallback must be called from the main thread. The
+// monitor lookup is an in-memory rectangle test against cached bounds,
+// so a window drag costs nothing until it crosses onto another monitor.
+func (u *UserInterface) registerWindowPosCallback() error {
+	if u.posCallback == nil {
+		u.posCallback = func(_ *glfw.Window, x, y int) {
+			m := theMonitors.monitorFromPosition(x, y)
+			if m == nil || m.id == u.lastMonitorID {
+				return
+			}
+			u.lastMonitorID = m.id
+			u.m.RLock()
+			f := u.monitorChangedCallback
+			u.m.RUnlock()
+			if f != nil {
+				f(m)
+			}
+		}
+	}
+	if _, err := u.window.SetPosCallback(u.posCallback); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u *UserInterface) registerDragCallback() error {
 	if u.dragCallback == nil {
 		u.dragCallback = func(_ *glfw.Window, entered bool, xpos, ypos float64) {
@@ -1008,6 +1074,9 @@ func (u *UserInterface) initOnMainThread(options *RunOptions) error {
 		return err
 	}
 	if err := u.registerDragCallback(); err != nil {
+		return err
+	}
+	if err := u.registerWindowPosCallback(); err != nil {
 		return err
 	}
 

@@ -270,6 +270,17 @@ func (m *Monitor) Name() string {
 	return ""
 }
 
+// RefreshRate returns 0: mobile platforms do not expose the display's
+// refresh rate.
+func (m *Monitor) RefreshRate() int {
+	return 0
+}
+
+// SetMonitorChangedCallback is a no-op: mobile platforms have a single
+// monitor.
+func (u *UserInterface) SetMonitorChangedCallback(func(*Monitor)) {
+}
+
 func (m *Monitor) DeviceScaleFactor() float64 {
 	m.m.Lock()
 	defer m.m.Unlock()

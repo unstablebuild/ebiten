@@ -45,6 +45,16 @@ func (m *Monitor) DeviceScaleFactor() float64 {
 	return m.contentScale
 }
 
+// RefreshRate returns the refresh rate of the monitor's current video
+// mode in Hz, or 0 when it is unknown. It is concurrent-safe as
+// videoMode is immutable.
+func (m *Monitor) RefreshRate() int {
+	if m.videoMode == nil {
+		return 0
+	}
+	return m.videoMode.RefreshRate
+}
+
 // Size returns the size of the monitor in device-independent pixels.
 func (m *Monitor) Size() (int, int) {
 	w, h := m.sizeInDIP()

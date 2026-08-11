@@ -786,6 +786,17 @@ func (m *Monitor) Name() string {
 	return ""
 }
 
+// RefreshRate returns 0: the browser does not expose the display's
+// refresh rate.
+func (m *Monitor) RefreshRate() int {
+	return 0
+}
+
+// SetMonitorChangedCallback is a no-op: the browser has a single
+// virtual monitor.
+func (u *UserInterface) SetMonitorChangedCallback(func(*Monitor)) {
+}
+
 func (m *Monitor) DeviceScaleFactor() float64 {
 	if m.deviceScaleFactor != 0 {
 		return m.deviceScaleFactor

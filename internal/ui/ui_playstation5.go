@@ -155,6 +155,17 @@ func (m *Monitor) Name() string {
 	return ""
 }
 
+// RefreshRate returns 0: the platform does not expose the display's
+// refresh rate.
+func (m *Monitor) RefreshRate() int {
+	return 0
+}
+
+// SetMonitorChangedCallback is a no-op: the platform has a single
+// monitor.
+func (u *UserInterface) SetMonitorChangedCallback(func(*Monitor)) {
+}
+
 func (m *Monitor) DeviceScaleFactor() float64 {
 	return 1
 }
