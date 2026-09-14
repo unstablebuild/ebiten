@@ -30,6 +30,8 @@
 // The Shape extension provides custom window shapes
 #include <X11/extensions/shape.h>
 
+#include "x11_dynamic_linbsd.h"
+
 typedef XRRCrtcGamma* (* PFN_XRRAllocGamma)(int);
 typedef void (* PFN_XRRFreeCrtcInfo)(XRRCrtcInfo*);
 typedef void (* PFN_XRRFreeGamma)(XRRCrtcGamma*);
