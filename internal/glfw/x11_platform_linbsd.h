@@ -30,6 +30,11 @@
 // The Shape extension provides custom window shapes
 #include <X11/extensions/shape.h>
 
+// Must stay after every <X11/...> include: it renames Xlib functions to
+// dlsym'd pointers, and a declaration of one of them seen afterwards would
+// collide with the pointer variable.
+#include "x11_dynamic_linbsd.h"
+
 typedef XRRCrtcGamma* (* PFN_XRRAllocGamma)(int);
 typedef void (* PFN_XRRFreeCrtcInfo)(XRRCrtcInfo*);
 typedef void (* PFN_XRRFreeGamma)(XRRCrtcGamma*);

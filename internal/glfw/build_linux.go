@@ -5,5 +5,5 @@
 package glfw
 
 // #cgo CFLAGS: -D_GLFW_X11
-// #cgo LDFLAGS: -lX11 -lXrandr -lXxf86vm -lXi -lXcursor -lm -lXinerama -ldl -lrt
+// #cgo LDFLAGS: -lm -ldl -lrt
 import "C"
