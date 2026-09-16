@@ -65,16 +65,39 @@ func TestScancodeCodepoint(t *testing.T) {
 	for _, tc := range cases {
 		name := fmt.Sprintf("%v/%c", tc.layout, tc.want)
 		t.Run(name, func(t *testing.T) {
-			setLayout(t, tc.layout)
-
-			if got := scancodeCodepoint(tc.keycode, false); got != tc.want {
-				t.Errorf("keycode %d = %q, want %q", tc.keycode, got, tc.want)
-			}
+			setLayout(t, tc.layout...)
+			waitCodepoint(t, tc.keycode, false, tc.want)
 			if got := scancodeCodepoint(tc.keycode, true); got != tc.wantShift {
 				t.Errorf("shift+keycode %d = %q, want %q", tc.keycode, got, tc.wantShift)
 			}
 		})
 	}
+}
+
+// TestScancodeCodepointLayoutChangeAfterFirstLookup verifies that a layout
+// change lands even when it happens right after the first lookup. Xlib only
+// asks the server for map change notifications when that first lookup loads
+// its copy of the map, and the request sits in its output buffer until the
+// next flush; a change made in that window used to go unreported and the
+// stale map was served for the rest of the session.
+func TestScancodeCodepointLayoutChangeAfterFirstLookup(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	startXvfb(t)
+
+	if err := Init(); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer Terminate()
+
+	// The first lookup of the session, with no Xlib traffic between it and
+	// the layout change below.
+	if got := scancodeCodepoint(keycodeSemicolon, false); got != ';' {
+		t.Fatalf("keycode %d = %q, want ';'", keycodeSemicolon, got)
+	}
+	setLayout(t, "fr")
+	waitCodepoint(t, keycodeSemicolon, false, 'm')
 }
 
 // startXvfb runs a headless X server for the duration of the test and points
@@ -112,7 +135,9 @@ func startXvfb(t *testing.T) {
 	}
 }
 
-func setLayout(t *testing.T, args []string) {
+// setLayout changes the server's keyboard map from a separate client. GLFW
+// learns of it asynchronously; use waitCodepoint to observe the result.
+func setLayout(t *testing.T, args ...string) {
 	t.Helper()
 
 	cmd := exec.Command("setxkbmap", args...)
@@ -120,10 +145,25 @@ func setLayout(t *testing.T, args []string) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("setxkbmap %v: %v", args, err)
 	}
+}
 
-	// Xlib caches the keyboard map; the new one only lands once the client
-	// has processed the server's XkbMapNotify.
-	if err := PollEvents(); err != nil {
-		t.Fatalf("PollEvents: %v", err)
+// waitCodepoint pumps GLFW's event loop until the keycode resolves to want,
+// failing if it has not within a generous deadline.
+func waitCodepoint(t *testing.T, keycode int, shift bool, want rune) {
+	t.Helper()
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if err := PollEvents(); err != nil {
+			t.Fatalf("PollEvents: %v", err)
+		}
+		got := scancodeCodepoint(keycode, shift)
+		if got == want {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("keycode %d shift=%v = %q, want %q", keycode, shift, got, want)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 }

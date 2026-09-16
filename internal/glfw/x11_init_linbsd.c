@@ -776,6 +776,20 @@ static GLFWbool initExtensions(void)
 
         XkbSelectEventDetails(_glfw.x11.display, XkbUseCoreKbd, XkbStateNotify,
                               XkbGroupStateMask, XkbGroupStateMask);
+
+        // Xlib refreshes its copy of the keyboard map when the server
+        // reports a map change or a new keyboard, but only asks for those
+        // events when the first keysym lookup loads the map, and the
+        // requests then sit in its output buffer until the next flush.  A
+        // layout change in that window is never reported and the stale map
+        // is served for the rest of the session.  Asking here, ahead of the
+        // round trips that follow in init, closes the window.  setxkbmap
+        // loads a whole keyboard, which arrives as the latter event.
+        XkbSelectEventDetails(_glfw.x11.display, XkbUseCoreKbd, XkbNewKeyboardNotify,
+                              XkbNKN_KeycodesMask | XkbNKN_DeviceIDMask,
+                              XkbNKN_KeycodesMask | XkbNKN_DeviceIDMask);
+        XkbSelectEventDetails(_glfw.x11.display, XkbUseCoreKbd, XkbMapNotify,
+                              XkbAllClientInfoMask, XkbAllClientInfoMask);
     }
 
 #if defined(__CYGWIN__)
