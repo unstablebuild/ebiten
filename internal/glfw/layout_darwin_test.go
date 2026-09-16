@@ -19,6 +19,8 @@ const (
 	scancodeSemicolon    = 0x29 // US ;
 	scancodeMinus        = 0x1B // US -
 	scancodeBracketRight = 0x1E // US ]
+	scancodeKP7          = 0x59
+	scancodeKPAdd        = 0x45
 	scancodeReturn       = 0x24
 	scancodeF1           = 0x7A
 )
@@ -27,7 +29,8 @@ const (
 // keyboard layout rather than by its US position. Every case is a chord a
 // non-US user reported as unreachable: the key labelled M on AZERTY sits on
 // the US semicolon, Colemak P sits on the US R, and the Nordic +/? key sits
-// on the US minus.
+// on the US minus. The Cyrillic and Greek rows leave the Latin range the
+// other layouts share.
 func TestTranslateScancode(t *testing.T) {
 	cases := []struct {
 		layout    string
@@ -37,6 +40,8 @@ func TestTranslateScancode(t *testing.T) {
 	}{
 		{layout: "US", scancode: scancodeSemicolon, want: ';', wantShift: ':'},
 		{layout: "US", scancode: scancodeA, want: 'a', wantShift: 'A'},
+		{layout: "US", scancode: scancodeKP7, want: '7', wantShift: '7'},
+		{layout: "US", scancode: scancodeKPAdd, want: '+', wantShift: '+'},
 		{layout: "French", scancode: scancodeSemicolon, want: 'm', wantShift: 'M'},
 		{layout: "French", scancode: scancodeQ, want: 'a', wantShift: 'A'},
 		{layout: "Norwegian", scancode: scancodeMinus, want: '+', wantShift: '?'},
@@ -45,6 +50,8 @@ func TestTranslateScancode(t *testing.T) {
 		{layout: "Colemak", scancode: scancodeP, want: ';', wantShift: ':'},
 		{layout: "Dvorak", scancode: scancodeQ, want: '\'', wantShift: '"'},
 		{layout: "German", scancode: scancodeZ, want: 'y', wantShift: 'Y'},
+		{layout: "Russian", scancode: scancodeA, want: 'ф', wantShift: 'Ф'},
+		{layout: "Greek", scancode: scancodeA, want: 'α', wantShift: 'Α'},
 	}
 
 	for _, tc := range cases {

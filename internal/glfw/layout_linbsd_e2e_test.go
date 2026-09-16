@@ -27,13 +27,18 @@ const (
 	keycodeMinus        = 20 // US -
 	keycodeBracketRight = 35 // US ]
 	keycodeKP7          = 79
+	keycodeKPAdd        = 86
+	keycodeReturn       = 36
+	keycodeF1           = 67
+	keycodeShiftLeft    = 50
 )
 
 // TestScancodeCodepoint verifies that a physical key is named by the active
 // XKB layout rather than by its US position. Every case is a chord a non-US
 // user reported as unreachable: the key labelled M on AZERTY sits on the US
 // semicolon, Colemak P sits on the US R, and the Nordic +/? key sits on the
-// US minus.
+// US minus. The Cyrillic and Greek rows leave Latin-1, so the keysym table
+// lookup is exercised rather than the identity mapping.
 func TestScancodeCodepoint(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -53,6 +58,8 @@ func TestScancodeCodepoint(t *testing.T) {
 	}{
 		{layout: []string{"us"}, keycode: keycodeSemicolon, want: ';', wantShift: ':'},
 		{layout: []string{"us"}, keycode: keycodeA, want: 'a', wantShift: 'A'},
+		{layout: []string{"us"}, keycode: keycodeKP7, want: '7', wantShift: '7'},
+		{layout: []string{"us"}, keycode: keycodeKPAdd, want: '+', wantShift: '+'},
 		{layout: []string{"fr"}, keycode: keycodeSemicolon, want: 'm', wantShift: 'M'},
 		{layout: []string{"fr"}, keycode: keycodeQ, want: 'a', wantShift: 'A'},
 		{layout: []string{"no"}, keycode: keycodeMinus, want: '+', wantShift: '?'},
@@ -61,6 +68,8 @@ func TestScancodeCodepoint(t *testing.T) {
 		{layout: []string{"us", "-variant", "colemak"}, keycode: keycodeP, want: ';', wantShift: ':'},
 		{layout: []string{"us", "-variant", "dvorak"}, keycode: keycodeQ, want: '\'', wantShift: '"'},
 		{layout: []string{"de"}, keycode: keycodeZ, want: 'y', wantShift: 'Y'},
+		{layout: []string{"ru"}, keycode: keycodeA, want: 'ф', wantShift: 'Ф'},
+		{layout: []string{"gr"}, keycode: keycodeA, want: 'α', wantShift: 'Α'},
 	}
 
 	for _, tc := range cases {
@@ -72,6 +81,33 @@ func TestScancodeCodepoint(t *testing.T) {
 				t.Errorf("shift+keycode %d = %q, want %q", tc.keycode, got, tc.wantShift)
 			}
 		})
+	}
+}
+
+// TestScancodeCodepointNoCharacter verifies that keycodes outside the
+// keyboard's range, keycodes GLFW has no key for, and keys that name no
+// character all report 0 rather than an error or a control character. The
+// key event path asks for every key it sees.
+func TestScancodeCodepointNoCharacter(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	startXvfb(t)
+
+	if err := Init(); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer Terminate()
+
+	setLayout(t, "us")
+	waitCodepoint(t, keycodeA, false, 'a')
+
+	for _, keycode := range []int{-1, 0, 7, 256, 1000, keycodeReturn, keycodeF1, keycodeShiftLeft} {
+		for _, shift := range []bool{false, true} {
+			if got := scancodeCodepoint(keycode, shift); got != 0 {
+				t.Errorf("keycode %d shift=%v = %q, want 0", keycode, shift, got)
+			}
+		}
 	}
 }
 
