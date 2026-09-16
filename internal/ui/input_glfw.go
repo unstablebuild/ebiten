@@ -51,7 +51,7 @@ func (u *UserInterface) registerInputCallbacks() error {
 		return err
 	}
 
-	if _, err := u.window.SetInputKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey, source glfw.InputSource) {
+	if _, err := u.window.SetInputKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey, source glfw.InputSource, char, shiftChar rune) {
 		// As this function is called from GLFW callbacks, the current thread is main.
 		u.m.Lock()
 		defer u.m.Unlock()
@@ -59,7 +59,7 @@ func (u *UserInterface) registerInputCallbacks() error {
 		if !ok {
 			return
 		}
-		u.inputState.appendKeyEvent(uiKey, KeyAction(action), KeyModifier(mods), InputSource(source))
+		u.inputState.appendKeyEvent(uiKey, KeyAction(action), KeyModifier(mods), InputSource(source), char, shiftChar)
 	}); err != nil {
 		return err
 	}

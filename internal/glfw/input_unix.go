@@ -13,7 +13,7 @@ package glfw
 // void goKeyCB(void* window, int key, int  scancode, int action, int mods);
 // void goCharCB(void* window, unsigned int character);
 // void goCharModsCB(void* window, unsigned int character, int mods);
-// void goInputKeyCB(void* window, int key, int scancode, int action, int mods, unsigned long long source);
+// void goInputKeyCB(void* window, int key, int scancode, int action, int mods, unsigned long long source, unsigned int codepoint, unsigned int shiftCodepoint);
 // void goInputCharCB(void* window, unsigned int character, int mods, int plain, unsigned long long source);
 // void goMouseButtonCB(void* window, int button, int action, int mods);
 // void goCursorPosCB(void* window, double xpos, double ypos);
@@ -121,9 +121,9 @@ func goCharModsCB(window unsafe.Pointer, character C.uint, mods C.int) {
 }
 
 //export goInputKeyCB
-func goInputKeyCB(window unsafe.Pointer, key, scancode, action, mods C.int, source C.ulonglong) {
+func goInputKeyCB(window unsafe.Pointer, key, scancode, action, mods C.int, source C.ulonglong, codepoint, shiftCodepoint C.uint) {
 	w := windows.get((*C.GLFWwindow)(window))
-	w.fInputKeyHolder(w, Key(key), int(scancode), Action(action), ModifierKey(mods), InputSource(source))
+	w.fInputKeyHolder(w, Key(key), int(scancode), Action(action), ModifierKey(mods), InputSource(source), rune(codepoint), rune(shiftCodepoint))
 }
 
 //export goInputCharCB

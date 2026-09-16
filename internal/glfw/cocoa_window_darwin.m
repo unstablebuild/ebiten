@@ -1664,10 +1664,61 @@ void _glfwPlatformSetCursorMode(_GLFWwindow* window, int mode)
     } // autoreleasepool
 }
 
+// Returns the first code point layout produces for scancode at its unshifted
+// or shifted level, or 0 if it produces none.  Depends on nothing but its
+// arguments, so tests can drive it with layouts other than the active one.
+//
+uint32_t _glfwTranslateScancodeNS(const UCKeyboardLayout* layout, UInt8 kbdType,
+                                  int scancode, GLFWbool shift)
+{
+    if (!layout)
+        return 0;
+
+    UInt32 deadKeyState = 0;
+    UniChar characters[4];
+    UniCharCount characterCount = 0;
+
+    if (UCKeyTranslate(layout,
+                       scancode,
+                       kUCKeyActionDisplay,
+                       shift ? (shiftKey >> 8) & 0xFF : 0,
+                       kbdType,
+                       kUCKeyTranslateNoDeadKeysBit,
+                       &deadKeyState,
+                       sizeof(characters) / sizeof(characters[0]),
+                       &characterCount,
+                       characters) != noErr)
+    {
+        return 0;
+    }
+
+    if (!characterCount)
+        return 0;
+
+    if (characterCount > 1 &&
+        characters[0] >= 0xd800 && characters[0] <= 0xdbff &&
+        characters[1] >= 0xdc00 && characters[1] <= 0xdfff)
+    {
+        return 0x10000 + ((characters[0] - 0xd800) << 10) + (characters[1] - 0xdc00);
+    }
+
+    return characters[0];
+}
+
+uint32_t _glfwPlatformGetScancodeCodepoint(int scancode, GLFWbool shift)
+{
+    if (scancode < 0 || scancode > 0xff ||
+        _glfw.ns.keycodes[scancode] == GLFW_KEY_UNKNOWN)
+    {
+        return 0;
+    }
+
+    return _glfwTranslateScancodeNS((const UCKeyboardLayout*) [(NSData*) _glfw.ns.unicodeData bytes],
+                                    LMGetKbdType(), scancode, shift);
+}
+
 const char* _glfwPlatformGetScancodeName(int scancode)
 {
-    @autoreleasepool {
-
     if (scancode < 0 || scancode > 0xff ||
         _glfw.ns.keycodes[scancode] == GLFW_KEY_UNKNOWN)
     {
@@ -1675,42 +1726,17 @@ const char* _glfwPlatformGetScancodeName(int scancode)
         return NULL;
     }
 
+    const uint32_t codepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_FALSE);
+    if (!codepoint)
+        return NULL;
+
     const int key = _glfw.ns.keycodes[scancode];
-
-    UInt32 deadKeyState = 0;
-    UniChar characters[4];
-    UniCharCount characterCount = 0;
-
-    if (UCKeyTranslate([(NSData*) _glfw.ns.unicodeData bytes],
-                       scancode,
-                       kUCKeyActionDisplay,
-                       0,
-                       LMGetKbdType(),
-                       kUCKeyTranslateNoDeadKeysBit,
-                       &deadKeyState,
-                       sizeof(characters) / sizeof(characters[0]),
-                       &characterCount,
-                       characters) != noErr)
-    {
-        return NULL;
-    }
-
-    if (!characterCount)
+    const size_t count = _glfwEncodeUTF8(_glfw.ns.keynames[key], codepoint);
+    if (count == 0)
         return NULL;
 
-    CFStringRef string = CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault,
-                                                            characters,
-                                                            characterCount,
-                                                            kCFAllocatorNull);
-    CFStringGetCString(string,
-                       _glfw.ns.keynames[key],
-                       sizeof(_glfw.ns.keynames[key]),
-                       kCFStringEncodingUTF8);
-    CFRelease(string);
-
+    _glfw.ns.keynames[key][count] = '\0';
     return _glfw.ns.keynames[key];
-
-    } // autoreleasepool
 }
 
 int _glfwPlatformGetKeyScancode(int key)

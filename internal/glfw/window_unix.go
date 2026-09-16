@@ -113,7 +113,7 @@ type Window struct {
 	fKeyHolder         func(w *Window, key Key, scancode int, action Action, mods ModifierKey)
 	fCharHolder        func(w *Window, char rune)
 	fCharModsHolder    func(w *Window, char rune, mods ModifierKey)
-	fInputKeyHolder    func(w *Window, key Key, scancode int, action Action, mods ModifierKey, source InputSource)
+	fInputKeyHolder    func(w *Window, key Key, scancode int, action Action, mods ModifierKey, source InputSource, char, shiftChar rune)
 	fInputCharHolder   func(w *Window, char rune, mods ModifierKey, normalText bool, source InputSource)
 	fDropHolder        func(w *Window, names []string)
 	fDragHolder        func(w *Window, entered bool, xpos, ypos float64)

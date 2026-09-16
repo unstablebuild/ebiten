@@ -70,35 +70,35 @@ func TestInputStateOrdering(t *testing.T) {
 		{
 			name: "key press then its text",
 			record: func(s *InputState) {
-				s.appendKeyEvent(KeyL, KeyPress, KeyModSuper, 7)
+				s.appendKeyEvent(KeyL, KeyPress, KeyModSuper, 7, 'l', 'L')
 				s.appendTextInput('l', KeyModSuper, true, 7)
 			},
 			want: []InputEvent{
-				{Kind: InputEventKindKey, Key: KeyL, Action: KeyPress, Mods: KeyModSuper, Source: 7},
+				{Kind: InputEventKindKey, Key: KeyL, Action: KeyPress, Mods: KeyModSuper, Char: 'l', ShiftChar: 'L', Source: 7},
 				{Kind: InputEventKindText, Mods: KeyModSuper, Rune: 'l', NormalText: true, Source: 7},
 			},
 		},
 		{
 			name: "text interleaved between two key actions keeps native order",
 			record: func(s *InputState) {
-				s.appendKeyEvent(KeyA, KeyPress, 0, 1)
+				s.appendKeyEvent(KeyA, KeyPress, 0, 1, 'a', 'A')
 				s.appendTextInput('a', 0, true, 1)
-				s.appendKeyEvent(KeyA, KeyRelease, 0, 2)
-				s.appendKeyEvent(KeyB, KeyPress, 0, 3)
+				s.appendKeyEvent(KeyA, KeyRelease, 0, 2, 0, 0)
+				s.appendKeyEvent(KeyB, KeyPress, 0, 3, 'b', 'B')
 				s.appendTextInput('b', 0, true, 3)
 			},
 			want: []InputEvent{
-				{Kind: InputEventKindKey, Key: KeyA, Action: KeyPress, Source: 1},
+				{Kind: InputEventKindKey, Key: KeyA, Action: KeyPress, Char: 'a', ShiftChar: 'A', Source: 1},
 				{Kind: InputEventKindText, Rune: 'a', NormalText: true, Source: 1},
 				{Kind: InputEventKindKey, Key: KeyA, Action: KeyRelease, Source: 2},
-				{Kind: InputEventKindKey, Key: KeyB, Action: KeyPress, Source: 3},
+				{Kind: InputEventKindKey, Key: KeyB, Action: KeyPress, Char: 'b', ShiftChar: 'B', Source: 3},
 				{Kind: InputEventKindText, Rune: 'b', NormalText: true, Source: 3},
 			},
 		},
 		{
 			name: "one key action commits several code points",
 			record: func(s *InputState) {
-				s.appendKeyEvent(KeyEnter, KeyPress, 0, 11)
+				s.appendKeyEvent(KeyEnter, KeyPress, 0, 11, 0, 0)
 				s.appendTextInput('あ', 0, true, 11)
 				s.appendTextInput('い', 0, true, 11)
 				s.appendTextInput('う', 0, true, 11)
@@ -113,27 +113,49 @@ func TestInputStateOrdering(t *testing.T) {
 		{
 			name: "each OS repeat is its own action",
 			record: func(s *InputState) {
-				s.appendKeyEvent(KeyA, KeyPress, 0, 4)
+				s.appendKeyEvent(KeyA, KeyPress, 0, 4, 'a', 'A')
 				s.appendTextInput('a', 0, true, 4)
-				s.appendKeyEvent(KeyA, KeyRepeat, 0, 5)
+				s.appendKeyEvent(KeyA, KeyRepeat, 0, 5, 'a', 'A')
 				s.appendTextInput('a', 0, true, 5)
 			},
 			want: []InputEvent{
-				{Kind: InputEventKindKey, Key: KeyA, Action: KeyPress, Source: 4},
+				{Kind: InputEventKindKey, Key: KeyA, Action: KeyPress, Char: 'a', ShiftChar: 'A', Source: 4},
 				{Kind: InputEventKindText, Rune: 'a', NormalText: true, Source: 4},
-				{Kind: InputEventKindKey, Key: KeyA, Action: KeyRepeat, Source: 5},
+				{Kind: InputEventKindKey, Key: KeyA, Action: KeyRepeat, Char: 'a', ShiftChar: 'A', Source: 5},
 				{Kind: InputEventKindText, Rune: 'a', NormalText: true, Source: 5},
 			},
 		},
 		{
 			name: "AltGr text is normal text despite a Ctrl+Alt mask",
 			record: func(s *InputState) {
-				s.appendKeyEvent(KeyE, KeyPress, KeyModControl|KeyModAlt, 9)
+				s.appendKeyEvent(KeyE, KeyPress, KeyModControl|KeyModAlt, 9, 'e', 'E')
 				s.appendTextInput('€', KeyModControl|KeyModAlt, true, 9)
 			},
 			want: []InputEvent{
-				{Kind: InputEventKindKey, Key: KeyE, Action: KeyPress, Mods: KeyModControl | KeyModAlt, Source: 9},
+				{Kind: InputEventKindKey, Key: KeyE, Action: KeyPress, Mods: KeyModControl | KeyModAlt, Char: 'e', ShiftChar: 'E', Source: 9},
 				{Kind: InputEventKindText, Mods: KeyModControl | KeyModAlt, Rune: '€', NormalText: true, Source: 9},
+			},
+		},
+		{
+			name: "layout characters name the key, not the US position",
+			record: func(s *InputState) {
+				s.appendKeyEvent(KeySemicolon, KeyPress, KeyModAlt, 13, 'm', 'M')
+				s.appendKeyEvent(KeySemicolon, KeyRelease, KeyModAlt, 14, 0, 0)
+			},
+			want: []InputEvent{
+				{Kind: InputEventKindKey, Key: KeySemicolon, Action: KeyPress, Mods: KeyModAlt, Char: 'm', ShiftChar: 'M', Source: 13},
+				{Kind: InputEventKindKey, Key: KeySemicolon, Action: KeyRelease, Mods: KeyModAlt, Source: 14},
+			},
+		},
+		{
+			name: "modifier and non-printable keys carry no layout characters",
+			record: func(s *InputState) {
+				s.appendKeyEvent(KeyShiftLeft, KeyPress, KeyModShift, 15, 0, 0)
+				s.appendKeyEvent(KeyF1, KeyPress, KeyModShift, 16, 0, 0)
+			},
+			want: []InputEvent{
+				{Kind: InputEventKindKey, Key: KeyShiftLeft, Action: KeyPress, Mods: KeyModShift, Source: 15},
+				{Kind: InputEventKindKey, Key: KeyF1, Action: KeyPress, Mods: KeyModShift, Source: 16},
 			},
 		},
 		{
@@ -178,11 +200,11 @@ func TestInputStateOrdering(t *testing.T) {
 func TestInputStateCopyAndReset(t *testing.T) {
 	var src, dst InputState
 
-	src.appendKeyEvent(KeyL, KeyPress, KeyModSuper, 21)
+	src.appendKeyEvent(KeyL, KeyPress, KeyModSuper, 21, 'l', 'L')
 	src.copyAndReset(&dst)
 
 	want := []InputEvent{
-		{Kind: InputEventKindKey, Key: KeyL, Action: KeyPress, Mods: KeyModSuper, Source: 21},
+		{Kind: InputEventKindKey, Key: KeyL, Action: KeyPress, Mods: KeyModSuper, Char: 'l', ShiftChar: 'L', Source: 21},
 	}
 	if !reflect.DeepEqual(dst.InputEvents, want) {
 		t.Fatalf("first update = %+v, want %+v", dst.InputEvents, want)

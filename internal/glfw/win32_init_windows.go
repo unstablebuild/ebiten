@@ -158,11 +158,23 @@ func updateKeyNamesWin32() {
 		return
 	}
 
-	for i := range _glfw.platformWindow.keynames {
-		_glfw.platformWindow.keynames[i] = ""
+	buildKeyNames(&_glfw.platformWindow.keynames, false)
+	buildKeyNames(&_glfw.platformWindow.shiftKeynames, true)
+}
+
+// buildKeyNames fills names with the character the active layout produces for
+// each key at its unshifted or shifted level. The two levels are what a chord
+// on the key means to the user, whose layout decides it; the key itself is
+// named by its US position.
+func buildKeyNames(names *[KeyLast + 1]string, shift bool) {
+	for i := range names {
+		names[i] = ""
 	}
 
 	var state [256]byte
+	if shift {
+		state[_VK_SHIFT] = 0x80
+	}
 
 	for key := KeySpace; key <= KeyLast; key++ {
 		scancode := _glfw.platformWindow.scancodes[key]
@@ -194,7 +206,7 @@ func updateKeyNamesWin32() {
 			continue
 		}
 
-		_glfw.platformWindow.keynames[key] = windows.UTF16ToString(chars[:length])
+		names[key] = windows.UTF16ToString(chars[:length])
 	}
 }
 

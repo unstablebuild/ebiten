@@ -448,6 +448,12 @@ void _glfwPlatformDestroyCursor(_GLFWcursor* cursor);
 void _glfwPlatformSetCursor(_GLFWwindow* window, _GLFWcursor* cursor);
 
 const char* _glfwPlatformGetScancodeName(int scancode);
+// Returns the code point the active keyboard layout produces for scancode at
+// its unshifted (shift == GLFW_FALSE) or shifted level, without dead-key
+// composition and ignoring Caps Lock, or 0 when the platform has no layout
+// data for it.  Called on the key event path, so it must not allocate or
+// raise an error.
+uint32_t _glfwPlatformGetScancodeCodepoint(int scancode, GLFWbool shift);
 int _glfwPlatformGetKeyScancode(int key);
 
 void _glfwPlatformFreeMonitor(_GLFWmonitor* monitor);

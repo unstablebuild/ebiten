@@ -77,6 +77,15 @@ type InputEvent struct {
 	Action KeyAction
 	Mods   KeyModifier
 
+	// Char and ShiftChar are the code points the active keyboard layout
+	// produces for Key at its unshifted and shifted levels. They name the
+	// key under the layout the user selected, which is what a chord means
+	// to them; Key names the physical button and is US-positional. They are
+	// set for presses and repeats of printable keys only, are resolved
+	// without dead-key composition and ignore Caps Lock, and are 0 when the
+	// platform reports no layout data.
+	Char, ShiftChar rune
+
 	// Rune and NormalText are set for InputEventKindText. Mods carries the
 	// native modifier mask reported alongside the code point.
 	Rune rune
@@ -188,12 +197,14 @@ func isEmojiSequenceRune(r rune) bool {
 	return r == '\u200d' || (r >= '\U000E0020' && r <= '\U000E007F')
 }
 
-func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier, source InputSource) {
+func (i *InputState) appendKeyEvent(key Key, action KeyAction, mods KeyModifier, source InputSource, char, shiftChar rune) {
 	i.InputEvents = append(i.InputEvents, InputEvent{
-		Kind:   InputEventKindKey,
-		Key:    key,
-		Action: action,
-		Mods:   mods,
-		Source: source,
+		Kind:      InputEventKindKey,
+		Key:       key,
+		Action:    action,
+		Mods:      mods,
+		Char:      char,
+		ShiftChar: shiftChar,
+		Source:    source,
 	})
 }

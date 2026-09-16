@@ -175,3 +175,6 @@ void _glfwSetVideoModeNS(_GLFWmonitor* monitor, const GLFWvidmode* desired);
 void _glfwRestoreVideoModeNS(_GLFWmonitor* monitor);
 
 float _glfwTransformYNS(float y);
+
+uint32_t _glfwTranslateScancodeNS(const UCKeyboardLayout* layout, UInt8 kbdType,
+                                  int scancode, GLFWbool shift);

@@ -83,6 +83,19 @@ type InputEvent struct {
 	Action KeyAction
 	Mods   KeyModifier
 
+	// Char and ShiftChar are the code points the active keyboard layout
+	// produces for Key at its unshifted and shifted levels. They name the
+	// key under the layout the user selected, which is what a chord means
+	// to them; Key names the physical button and is US-positional. They are
+	// set for presses and repeats of printable keys only, are resolved
+	// without dead-key composition and ignore Caps Lock, and are 0 when the
+	// platform reports no layout data.
+	//
+	// They describe the key, not the text it commits: a chord that produces
+	// no text still carries them, and text that a layout composes is
+	// reported as an InputEventKindText observation instead.
+	Char, ShiftChar rune
+
 	// Rune is the committed code point of an InputEventKindText
 	// observation; Mods carries the native modifier mask reported with it.
 	Rune rune
@@ -558,6 +571,8 @@ func (i *inputState) appendInputEvents(events []InputEvent) []InputEvent {
 			Key:        Key(ie.Key),
 			Action:     ie.Action,
 			Mods:       ie.Mods,
+			Char:       ie.Char,
+			ShiftChar:  ie.ShiftChar,
 			Rune:       ie.Rune,
 			NormalText: ie.NormalText,
 			Source:     ie.Source,

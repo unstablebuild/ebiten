@@ -30,8 +30,12 @@ type Image struct {
 type InputSource uint64
 
 // InputKeyCallback is the key callback that also reports the source of the
-// key action.
-type InputKeyCallback func(w *Window, key Key, scancode int, action Action, mods ModifierKey, source InputSource)
+// key action and the characters the active keyboard layout produces for the
+// key at its unshifted and shifted levels. key names the physical button by
+// its US position, so char and shiftChar are what a chord on the key means to
+// the user. They are 0 for releases, for non-printable keys and when the
+// platform reports no layout data.
+type InputKeyCallback func(w *Window, key Key, scancode int, action Action, mods ModifierKey, source InputSource, char, shiftChar rune)
 
 // InputCharCallback is the character callback that also reports the native
 // modifier mask, the platform's classification of the code point as normal

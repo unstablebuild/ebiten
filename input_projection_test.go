@@ -28,17 +28,19 @@ import (
 func TestInputProjections(t *testing.T) {
 	var s inputState
 	s.state.InputEvents = []ui.InputEvent{
-		{Kind: ui.InputEventKindKey, Key: ui.KeyL, Action: ui.KeyPress, Mods: ui.KeyModSuper, Source: 1},
+		{Kind: ui.InputEventKindKey, Key: ui.KeyL, Action: ui.KeyPress, Mods: ui.KeyModSuper, Char: 'l', ShiftChar: 'L', Source: 1},
 		{Kind: ui.InputEventKindText, Mods: ui.KeyModSuper, Rune: 'l', NormalText: true, Source: 1},
 		{Kind: ui.InputEventKindText, Rune: '漢', NormalText: true, Source: 0},
 		{Kind: ui.InputEventKindKey, Key: ui.KeyL, Action: ui.KeyRelease, Mods: ui.KeyModSuper, Source: 2},
+		{Kind: ui.InputEventKindKey, Key: ui.KeySemicolon, Action: ui.KeyPress, Mods: ui.KeyModAlt, Char: 'm', ShiftChar: 'M', Source: 3},
 	}
 
 	wantEvents := []InputEvent{
-		{Kind: InputEventKindKey, Key: KeyL, Action: KeyActionPress, Mods: KeyModSuper, Source: 1},
+		{Kind: InputEventKindKey, Key: KeyL, Action: KeyActionPress, Mods: KeyModSuper, Char: 'l', ShiftChar: 'L', Source: 1},
 		{Kind: InputEventKindText, Mods: KeyModSuper, Rune: 'l', NormalText: true, Source: 1},
 		{Kind: InputEventKindText, Rune: '漢', NormalText: true},
 		{Kind: InputEventKindKey, Key: KeyL, Action: KeyActionRelease, Mods: KeyModSuper, Source: 2},
+		{Kind: InputEventKindKey, Key: KeySemicolon, Action: KeyActionPress, Mods: KeyModAlt, Char: 'm', ShiftChar: 'M', Source: 3},
 	}
 	if got := s.appendInputEvents(nil); !reflect.DeepEqual(got, wantEvents) {
 		t.Errorf("appendInputEvents() = %+v, want %+v", got, wantEvents)
@@ -52,6 +54,7 @@ func TestInputProjections(t *testing.T) {
 	wantKeys := []KeyEvent{
 		{Key: KeyL, Action: KeyActionPress, Mods: KeyModSuper},
 		{Key: KeyL, Action: KeyActionRelease, Mods: KeyModSuper},
+		{Key: KeySemicolon, Action: KeyActionPress, Mods: KeyModAlt},
 	}
 	if got := s.appendKeyEvents(nil); !reflect.DeepEqual(got, wantKeys) {
 		t.Errorf("appendKeyEvents() = %+v, want %+v", got, wantKeys)

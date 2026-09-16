@@ -1437,9 +1437,17 @@ typedef void (* GLFWcharmodsfun)(GLFWwindow* window, unsigned int codepoint, int
  *  must not process again.  A source ID of zero means the platform could not
  *  establish causality for this action.
  *
+ *  The callback also receives @p codepoint and @p shiftCodepoint, the
+ *  characters the active keyboard layout produces for the key at its
+ *  unshifted and shifted levels.  @p key names the physical button by its US
+ *  position, so these are what a chord on the key means to the user.  They
+ *  are resolved without dead-key composition and ignore Caps Lock, and are
+ *  zero for releases, for non-printable keys and when the platform reports no
+ *  layout data.
+ *
  *  @ingroup input
  */
-typedef void (* GLFWinputkeyfun)(GLFWwindow* window, int key, int scancode, int action, int mods, unsigned long long source);
+typedef void (* GLFWinputkeyfun)(GLFWwindow* window, int key, int scancode, int action, int mods, unsigned long long source, unsigned int codepoint, unsigned int shiftCodepoint);
 
 /*! @brief The function pointer type for input character callbacks.
  *

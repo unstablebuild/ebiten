@@ -33,6 +33,16 @@ unsigned long long _glfwNextInputSource(void)
     return ++next;
 }
 
+// Reports whether key names a printable character under some layout, and so
+// has a layout code point at all.
+//
+static GLFWbool isPrintableKey(int key)
+{
+    return key == GLFW_KEY_KP_EQUAL ||
+           (key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_ADD) ||
+           (key >= GLFW_KEY_APOSTROPHE && key <= GLFW_KEY_WORLD_2);
+}
+
 // Notifies shared code of a physical key event
 //
 void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int mods,
@@ -64,7 +74,21 @@ void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int m
         window->callbacks.key((GLFWwindow*) window, key, scancode, action, mods);
 
     if (window->callbacks.inputkey)
-        window->callbacks.inputkey((GLFWwindow*) window, key, scancode, action, mods, source);
+    {
+        // Chords are named by the layout the user selected, not by the US
+        // position of the physical key.  A release carries no character
+        // because nothing can be bound to it.
+        uint32_t codepoint = 0, shiftCodepoint = 0;
+
+        if (action != GLFW_RELEASE && isPrintableKey(key))
+        {
+            codepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_FALSE);
+            shiftCodepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_TRUE);
+        }
+
+        window->callbacks.inputkey((GLFWwindow*) window, key, scancode, action, mods,
+                                   source, codepoint, shiftCodepoint);
+    }
 }
 
 // Notifies shared code of a Unicode codepoint input event
@@ -308,12 +332,8 @@ GLFWAPI const char* glfwGetKeyName(int key, int scancode)
 
     if (key != GLFW_KEY_UNKNOWN)
     {
-        if (key != GLFW_KEY_KP_EQUAL &&
-            (key < GLFW_KEY_KP_0 || key > GLFW_KEY_KP_ADD) &&
-            (key < GLFW_KEY_APOSTROPHE || key > GLFW_KEY_WORLD_2))
-        {
+        if (!isPrintableKey(key))
             return NULL;
-        }
 
         scancode = _glfwPlatformGetKeyScancode(key);
     }

@@ -2916,6 +2916,30 @@ void _glfwPlatformSetCursorMode(_GLFWwindow* window, int mode)
     XFlush(_glfw.x11.display);
 }
 
+uint32_t _glfwPlatformGetScancodeCodepoint(int scancode, GLFWbool shift)
+{
+    if (!_glfw.x11.xkb.available)
+        return 0;
+
+    if (scancode < 0 || scancode > 0xff ||
+        _glfw.x11.keycodes[scancode] == GLFW_KEY_UNKNOWN)
+    {
+        return 0;
+    }
+
+    const KeySym keysym = XkbKeycodeToKeysym(_glfw.x11.display,
+                                             scancode, _glfw.x11.xkb.group,
+                                             shift ? 1 : 0);
+    if (keysym == NoSymbol)
+        return 0;
+
+    const uint32_t codepoint = _glfwKeySym2Unicode(keysym);
+    if (codepoint == GLFW_INVALID_CODEPOINT)
+        return 0;
+
+    return codepoint;
+}
+
 const char* _glfwPlatformGetScancodeName(int scancode)
 {
     if (!_glfw.x11.xkb.available)
@@ -2928,16 +2952,11 @@ const char* _glfwPlatformGetScancodeName(int scancode)
         return NULL;
     }
 
+    const uint32_t codepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_FALSE);
+    if (!codepoint)
+        return NULL;
+
     const int key = _glfw.x11.keycodes[scancode];
-    const KeySym keysym = XkbKeycodeToKeysym(_glfw.x11.display,
-                                             scancode, _glfw.x11.xkb.group, 0);
-    if (keysym == NoSymbol)
-        return NULL;
-
-    const uint32_t codepoint = _glfwKeySym2Unicode(keysym);
-    if (codepoint == GLFW_INVALID_CODEPOINT)
-        return NULL;
-
     const size_t count = _glfwEncodeUTF8(_glfw.x11.keynames[key], codepoint);
     if (count == 0)
         return NULL;
