@@ -19,6 +19,8 @@ const (
 	scancodeSemicolon    = 0x29 // US ;
 	scancodeMinus        = 0x1B // US -
 	scancodeBracketRight = 0x1E // US ]
+	scancodeReturn       = 0x24
+	scancodeF1           = 0x7A
 )
 
 // TestTranslateScancode verifies that a physical key is named by the active
@@ -68,5 +70,37 @@ func TestTranslateScancode(t *testing.T) {
 func TestTranslateScancodeNoLayout(t *testing.T) {
 	if got := translateScancode(keyboardLayout{}, scancodeA, false); got != 0 {
 		t.Errorf("translateScancode(no layout) = %q, want 0", got)
+	}
+}
+
+// TestTranslateScancodeOutOfRange verifies that a key code outside the
+// 8-bit range yields no character. UCKeyTranslate takes a 16-bit code, so an
+// unchecked wider value would wrap around to a real key.
+func TestTranslateScancodeOutOfRange(t *testing.T) {
+	layout, ok := loadKeyboardLayout("US")
+	if !ok {
+		t.Skip("keyboard layout US is not available on this machine")
+	}
+	for _, scancode := range []int{-1, 0x100, 0x10000, 0x40000000} {
+		if got := translateScancode(layout, scancode, false); got != 0 {
+			t.Errorf("translateScancode(%#x) = %q, want 0", scancode, got)
+		}
+	}
+}
+
+// TestTranslateScancodeEditingKeys verifies that the control characters the
+// layout reports for editing and function keys never reach an event. The key
+// event path only asks for printable keys, and layoutRune rejects the values
+// anyway; both are needed for a key to carry no character.
+func TestTranslateScancodeEditingKeys(t *testing.T) {
+	layout, ok := loadKeyboardLayout("US")
+	if !ok {
+		t.Skip("keyboard layout US is not available on this machine")
+	}
+	for _, scancode := range []int{scancodeReturn, scancodeF1} {
+		raw := translateScancode(layout, scancode, false)
+		if got := layoutRune(uint32(raw)); got != 0 {
+			t.Errorf("layoutRune(translateScancode(%#x) = %q) = %q, want 0", scancode, raw, got)
+		}
 	}
 }

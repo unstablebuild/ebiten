@@ -59,26 +59,11 @@ func (w *Window) inputKey(key Key, scancode int, action Action, mods ModifierKey
 		// because nothing can be bound to it.
 		var char, shiftChar rune
 		if action != Release && isPrintableKey(key) {
-			char = firstRune(_glfw.platformWindow.keynames[key])
-			shiftChar = firstRune(_glfw.platformWindow.shiftKeynames[key])
+			char = layoutRune(uint32(firstRune(_glfw.platformWindow.keynames[key])))
+			shiftChar = layoutRune(uint32(firstRune(_glfw.platformWindow.shiftKeynames[key])))
 		}
 		w.callbacks.inputkey(w, key, scancode, action, mods, source, char, shiftChar)
 	}
-}
-
-// isPrintableKey reports whether key names a printable character under some
-// layout, and so has a layout code point at all.
-func isPrintableKey(key Key) bool {
-	return key == KeyKPEqual ||
-		(key >= KeyKP0 && key <= KeyKPAdd) ||
-		(key >= KeyApostrophe && key <= KeyWorld2)
-}
-
-func firstRune(s string) rune {
-	for _, r := range s {
-		return r
-	}
-	return 0
 }
 
 func (w *Window) inputChar(codepoint rune, mods ModifierKey, plain bool, source InputSource) {

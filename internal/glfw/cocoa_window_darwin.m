@@ -1671,7 +1671,9 @@ void _glfwPlatformSetCursorMode(_GLFWwindow* window, int mode)
 uint32_t _glfwTranslateScancodeNS(const UCKeyboardLayout* layout, UInt8 kbdType,
                                   int scancode, GLFWbool shift)
 {
-    if (!layout)
+    // UCKeyTranslate takes a 16-bit key code; a wider value must not wrap
+    // around to a real key.
+    if (!layout || scancode < 0 || scancode > 0xff)
         return 0;
 
     UInt32 deadKeyState = 0;
@@ -1695,12 +1697,17 @@ uint32_t _glfwTranslateScancodeNS(const UCKeyboardLayout* layout, UInt8 kbdType,
     if (!characterCount)
         return 0;
 
-    if (characterCount > 1 &&
-        characters[0] >= 0xd800 && characters[0] <= 0xdbff &&
-        characters[1] >= 0xdc00 && characters[1] <= 0xdfff)
+    if (characters[0] >= 0xd800 && characters[0] <= 0xdbff)
     {
+        if (characterCount < 2 ||
+            characters[1] < 0xdc00 || characters[1] > 0xdfff)
+        {
+            return 0;
+        }
         return 0x10000 + ((characters[0] - 0xd800) << 10) + (characters[1] - 0xdc00);
     }
+    if (characters[0] >= 0xdc00 && characters[0] <= 0xdfff)
+        return 0;
 
     return characters[0];
 }

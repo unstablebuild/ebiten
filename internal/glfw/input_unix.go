@@ -123,7 +123,8 @@ func goCharModsCB(window unsafe.Pointer, character C.uint, mods C.int) {
 //export goInputKeyCB
 func goInputKeyCB(window unsafe.Pointer, key, scancode, action, mods C.int, source C.ulonglong, codepoint, shiftCodepoint C.uint) {
 	w := windows.get((*C.GLFWwindow)(window))
-	w.fInputKeyHolder(w, Key(key), int(scancode), Action(action), ModifierKey(mods), InputSource(source), rune(codepoint), rune(shiftCodepoint))
+	w.fInputKeyHolder(w, Key(key), int(scancode), Action(action), ModifierKey(mods), InputSource(source),
+		layoutRune(uint32(codepoint)), layoutRune(uint32(shiftCodepoint)))
 }
 
 //export goInputCharCB

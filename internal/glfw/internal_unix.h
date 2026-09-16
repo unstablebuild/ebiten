@@ -552,6 +552,9 @@ void _glfwInputWindowMonitor(_GLFWwindow* window, _GLFWmonitor* monitor);
 void _glfwInputKey(_GLFWwindow* window,
                    int key, int scancode, int action, int mods,
                    unsigned long long source);
+// Reports whether key names a printable character under some layout, and so
+// has a layout code point at all.
+GLFWbool _glfwIsPrintableKey(int key);
 void _glfwInputChar(_GLFWwindow* window,
                     uint32_t codepoint, int mods, GLFWbool plain,
                     unsigned long long source);

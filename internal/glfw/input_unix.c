@@ -33,10 +33,7 @@ unsigned long long _glfwNextInputSource(void)
     return ++next;
 }
 
-// Reports whether key names a printable character under some layout, and so
-// has a layout code point at all.
-//
-static GLFWbool isPrintableKey(int key)
+GLFWbool _glfwIsPrintableKey(int key)
 {
     return key == GLFW_KEY_KP_EQUAL ||
            (key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_ADD) ||
@@ -80,7 +77,7 @@ void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int m
         // because nothing can be bound to it.
         uint32_t codepoint = 0, shiftCodepoint = 0;
 
-        if (action != GLFW_RELEASE && isPrintableKey(key))
+        if (action != GLFW_RELEASE && _glfwIsPrintableKey(key))
         {
             codepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_FALSE);
             shiftCodepoint = _glfwPlatformGetScancodeCodepoint(scancode, GLFW_TRUE);
@@ -332,7 +329,7 @@ GLFWAPI const char* glfwGetKeyName(int key, int scancode)
 
     if (key != GLFW_KEY_UNKNOWN)
     {
-        if (!isPrintableKey(key))
+        if (!_glfwIsPrintableKey(key))
             return NULL;
 
         scancode = _glfwPlatformGetKeyScancode(key);
