@@ -98,7 +98,7 @@
     X(XkbGetMap) \
     X(XkbGetNames) \
     X(XkbGetState) \
-    X(XkbKeycodeToKeysym) \
+    X(XkbLookupKeySym) \
     X(XkbQueryExtension) \
     X(XkbSelectEventDetails) \
     X(XkbSetDetectableAutoRepeat) \

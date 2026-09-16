@@ -2927,10 +2927,15 @@ uint32_t _glfwPlatformGetScancodeCodepoint(int scancode, GLFWbool shift)
         return 0;
     }
 
-    const KeySym keysym = XkbKeycodeToKeysym(_glfw.x11.display,
-                                             scancode, _glfw.x11.xkb.group,
-                                             shift ? 1 : 0);
-    if (keysym == NoSymbol)
+    // Resolved as a core state rather than a (group, level) pair so that a
+    // key with fewer groups than the active one falls back per its own
+    // out-of-range policy instead of to NoSymbol, and so that Shift selects
+    // whichever level the key's type maps it to.
+    const unsigned int state = XkbBuildCoreState(shift ? ShiftMask : 0,
+                                                 _glfw.x11.xkb.group);
+    KeySym keysym;
+    unsigned int consumed;
+    if (!XkbLookupKeySym(_glfw.x11.display, scancode, state, &consumed, &keysym))
         return 0;
 
     const uint32_t codepoint = _glfwKeySym2Unicode(keysym);

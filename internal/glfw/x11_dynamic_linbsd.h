@@ -127,7 +127,7 @@ GLFWbool _glfwLoadX11Library(void);
 #define XkbGetMap                  _glfw_dyn_XkbGetMap
 #define XkbGetNames                _glfw_dyn_XkbGetNames
 #define XkbGetState                _glfw_dyn_XkbGetState
-#define XkbKeycodeToKeysym         _glfw_dyn_XkbKeycodeToKeysym
+#define XkbLookupKeySym            _glfw_dyn_XkbLookupKeySym
 #define XkbQueryExtension          _glfw_dyn_XkbQueryExtension
 #define XkbSelectEventDetails      _glfw_dyn_XkbSelectEventDetails
 #define XkbSetDetectableAutoRepeat _glfw_dyn_XkbSetDetectableAutoRepeat

@@ -26,6 +26,7 @@ const (
 	keycodeSemicolon    = 47 // US ;
 	keycodeMinus        = 20 // US -
 	keycodeBracketRight = 35 // US ]
+	keycodeKP7          = 79
 )
 
 // TestScancodeCodepoint verifies that a physical key is named by the active
@@ -98,6 +99,39 @@ func TestScancodeCodepointLayoutChangeAfterFirstLookup(t *testing.T) {
 	}
 	setLayout(t, "fr")
 	waitCodepoint(t, keycodeSemicolon, false, 'm')
+}
+
+// TestScancodeCodepointFollowsGroupSwitch verifies that with several layouts
+// loaded at once, the character follows the group the user switched to,
+// which is how desktop layout switchers work.
+func TestScancodeCodepointFollowsGroupSwitch(t *testing.T) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	startXvfb(t)
+
+	if err := Init(); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	defer Terminate()
+
+	setLayout(t, "-layout", "us,fr")
+	if !lockKeyboardGroup(1) {
+		t.Fatal("lock keyboard group 1")
+	}
+	waitCodepoint(t, keycodeA, false, 'q')
+	if got := scancodeCodepoint(keycodeSemicolon, false); got != 'm' {
+		t.Errorf("keycode %d in group 1 = %q, want 'm'", keycodeSemicolon, got)
+	}
+	// The keypad has a single group; it must still resolve from group 1.
+	if got := scancodeCodepoint(keycodeKP7, false); got != '7' {
+		t.Errorf("keycode %d in group 1 = %q, want '7'", keycodeKP7, got)
+	}
+
+	if !lockKeyboardGroup(0) {
+		t.Fatal("lock keyboard group 0")
+	}
+	waitCodepoint(t, keycodeA, false, 'a')
 }
 
 // startXvfb runs a headless X server for the duration of the test and points
