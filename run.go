@@ -194,6 +194,19 @@ func IsScreenFilterEnabled() bool {
 // Termination is a special error which indicates Game termination without error.
 var Termination = ui.RegularTermination
 
+// Init initializes the platform's windowing system and returns the error if
+// that fails, for example because no display server is reachable.
+//
+// Otherwise the first call into Ebitengine initializes it and panics on
+// failure. Init is how a caller handles that failure before making any other
+// call. A failed initialization is not retried: Init returns the same error
+// every time, and the functions that need it still panic.
+//
+// Init must be called on the main thread.
+func Init() error {
+	return ui.Init()
+}
+
 // RunGame starts the main loop and runs the game.
 // game's Update function is called every tick to update the game logic.
 // game's Draw function is called every frame to draw the screen.

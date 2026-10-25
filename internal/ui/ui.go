@@ -89,17 +89,28 @@ type UserInterface struct {
 
 var (
 	theUI     *UserInterface
+	theUIErr  error
 	theUIOnce sync.Once
 )
 
-func Get() *UserInterface {
+// Init creates the user interface unless it exists, and returns the error
+// that creating it failed with. A failed creation is not retried: every call
+// returns the same error.
+//
+// Init must be called from the main thread.
+func Init() error {
 	theUIOnce.Do(func() {
-		u, err := newUserInterface()
-		if err != nil {
-			panic(err)
-		}
-		theUI = u
+		theUI, theUIErr = newUserInterface()
 	})
+	return theUIErr
+}
+
+// Get returns the user interface, creating it with Init if needed. Get
+// panics with Init's error if the user interface could not be created.
+func Get() *UserInterface {
+	if err := Init(); err != nil {
+		panic(err)
+	}
 	return theUI
 }
 

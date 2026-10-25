@@ -57,3 +57,13 @@ func fetchErrorIgnoringPlatformError() error {
 		return nil
 	}
 }
+
+// fetchError returns the last error GLFW reported, if any.
+func fetchError() error {
+	select {
+	case err := <-lastError:
+		return err
+	default:
+		return nil
+	}
+}

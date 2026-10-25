@@ -43,11 +43,16 @@ const (
 //
 // This function may only be called from the main thread.
 func Init() error {
-	C.glfwInit()
-	if err := fetchErrorIgnoringPlatformError(); err != nil {
+	if C.glfwInit() == C.GLFW_TRUE {
+		return fetchErrorIgnoringPlatformError()
+	}
+	// A failed init reports its cause as a platform error, the kind every
+	// other call only prints. Returning nil would leave GLFW uninitialized
+	// for callers that took Init's success at its word.
+	if err := fetchError(); err != nil {
 		return err
 	}
-	return nil
+	return errors.New("glfw: glfwInit failed without reporting an error")
 }
 
 // Terminate destroys all remaining windows, frees any allocated resources and
