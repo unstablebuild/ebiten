@@ -19,6 +19,7 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"math"
 	"runtime"
 
 	"github.com/jezek/xgb"
@@ -128,6 +129,15 @@ func dipFromGLFWPixel(x float64, deviceScaleFactor float64) float64 {
 
 func dipToGLFWPixel(x float64, deviceScaleFactor float64) float64 {
 	return x * deviceScaleFactor
+}
+
+// isValidWindowSizeInGLFWPixel reports whether the window system can really
+// hold a window of this size. X11 carries sizes in unsigned 16-bit fields but
+// addresses drawables with signed 16-bit coordinates, so a larger size is a
+// negative one that a window manager computed and the server wrapped: -8
+// arrives as 65528.
+func isValidWindowSizeInGLFWPixel(width, height int) bool {
+	return width <= math.MaxInt16 && height <= math.MaxInt16
 }
 
 func (u *UserInterface) adjustWindowPosition(x, y int, monitor *Monitor) (int, int) {

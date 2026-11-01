@@ -744,6 +744,11 @@ func (u *UserInterface) registerWindowFramebufferSizeCallback() error {
 		// When a decorating state changes, the callback of arguments might be an unexpected value on macOS (#2257)
 		// Then, do not register this callback on macOS.
 		u.defaultFramebufferSizeCallback = func(_ *glfw.Window, w, h int) {
+			// Keep origWindow{Width,Height}InDIP at the last valid size, which
+			// outsideSize falls back to while the window has an invalid one.
+			if !isValidWindowSizeInGLFWPixel(w, h) {
+				return
+			}
 			f, err := u.isFullscreen()
 			if err != nil {
 				u.setError(err)
@@ -1122,6 +1127,9 @@ func (u *UserInterface) outsideSize() (float64, float64, error) {
 	ww, wh, err := u.window.GetSize()
 	if err != nil {
 		return 0, 0, err
+	}
+	if !isValidWindowSizeInGLFWPixel(ww, wh) {
+		return float64(u.origWindowWidthInDIP), float64(u.origWindowHeightInDIP), nil
 	}
 	m, ok, err := u.currentMonitor()
 	if err != nil {

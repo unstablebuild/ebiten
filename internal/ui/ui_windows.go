@@ -109,6 +109,10 @@ func dipToGLFWPixel(x float64, deviceScaleFactor float64) float64 {
 	return x * deviceScaleFactor
 }
 
+func isValidWindowSizeInGLFWPixel(_, _ int) bool {
+	return true
+}
+
 func (u *UserInterface) adjustWindowPosition(x, y int, monitor *Monitor) (int, int) {
 	if microsoftgdk.IsXbox() {
 		return x, y

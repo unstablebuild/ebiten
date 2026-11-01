@@ -10,7 +10,7 @@ test:
 
 # Needs a headless X server and setxkbmap: apt install xvfb x11-xkb-utils.
 test-e2e:
-	go test -tags e2e ./internal/glfw/
+	go test -tags e2e ./internal/glfw/ ./internal/ui/
 
 build-windows:
 	GOOS=windows go build ./internal/glfw/
